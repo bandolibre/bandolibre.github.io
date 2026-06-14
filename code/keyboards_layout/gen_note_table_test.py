@@ -159,7 +159,7 @@ class GenerateHeaderTest(unittest.TestCase):
         header = gnt.generate_header(table)
 
         self.assertEqual(header.count("{"), header.count("}"))
-        self.assertIn("typedef enum { BELLOWS_PULL = 0, BELLOWS_PUSH = 1 } bellows_t;", header)
+        self.assertIn("typedef enum { BELLOWS_PULL = 0, BELLOWS_PUSH = 1, BELLOWS_NEUTRAL = 2 } bellows_t;", header)
         self.assertIn(f"#define NUM_KEYS {gnt.NUM_KEYS}", header)
         self.assertIn("note_table[3][2][NUM_KEYS]", header)
         self.assertIn("#define NOTE_NONE 0", header)

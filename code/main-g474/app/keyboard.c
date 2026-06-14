@@ -131,6 +131,7 @@ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
 static void bus_note_on(spi_bus_t *b, uint8_t wing_id, int k)
 {
   if (b->sounding_note[k] != NOTE_NONE) return;
+  if (bellow_direction() == BELLOWS_NEUTRAL) return;  /* no air moves, no note; table has no neutral slice */
   uint8_t note = note_table[wing_id][bellow_direction()][k];
   if (note == NOTE_NONE) return;
   b->sounding_note[k] = note;

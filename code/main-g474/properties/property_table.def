@@ -13,7 +13,8 @@
  *                   the lookup name
  *   .default_value  initial value and the value property_reset() restores
  *                   (bool: 0/1). Named .default would clash with the C keyword.
- *   .min .max       inclusive bounds; set() clamps, flash load defaults on violation
+ *   .min .max       inclusive bounds; set() clamps, flash load defaults on
+ *                   violation. Omit for bool (range is implicitly 0..1).
  *   .description    human-readable text for the editor
  *
  * Reserved (removed) tags: (none yet)
@@ -46,3 +47,6 @@ PROPERTY(8, uint16_t, bellow_cchyst,
 PROPERTY(9, uint16_t, bellow_ccper,
          .default_value = 10, .min = 1, .max = 1000,
          .description = "Min milliseconds between expression-CC sends")
+PROPERTY(PROPERTY_TAG_NONE, bool, log_bellow,
+         .default_value = 0,
+         .description = "Log hall readings and bellows direction each poll")

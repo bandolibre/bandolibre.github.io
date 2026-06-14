@@ -31,10 +31,20 @@ typedef enum {
   PROPERTY_TYPE_U16  = 1,
 } property_type_t;
 
-/* Map the C type token used in property_table.def to its property_type_t. */
+/* Map the C type token used in property_table.def to its property_type_t. The
+ * `bool` token expands to `_Bool` (stdbool.h) before it reaches the paste, so
+ * the bool mapping is keyed on `_Bool`. */
 #define PROPERTY_TYPE_ENUM_uint16_t PROPERTY_TYPE_U16
-#define PROPERTY_TYPE_ENUM_bool     PROPERTY_TYPE_BOOL
+#define PROPERTY_TYPE_ENUM__Bool    PROPERTY_TYPE_BOOL
 #define PROPERTY_TYPE_ENUM(type) PROPERTY_TYPE_ENUM_##type
+
+/* Per-type metadata defaults, expanded ahead of the table's named initializers
+ * so a property can omit them. bool has a fixed 0..1 range, so bool properties
+ * leave out .min/.max; uint16_t supplies its own. Keyed on the post-expansion
+ * type token (`bool` -> `_Bool`). */
+#define PROPERTY_DEFAULTS_uint16_t
+#define PROPERTY_DEFAULTS__Bool      .min = 0, .max = 1,
+#define PROPERTY_DEFAULTS(type) PROPERTY_DEFAULTS_##type
 
 /* Live values. The type token in the table IS the C type, so each field
  * declares directly. Read through g_properties (the read-only view below). */

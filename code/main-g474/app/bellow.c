@@ -126,13 +126,21 @@ void bellow_poll(void)
   HAL_GPIO_WritePin(HALL_NEN_GPIO_Port, HALL_NEN_Pin, GPIO_PIN_SET);
 
   uint32_t hall_total = hall0 + hall1;
+  bellows_t bellows_prev = g_bellows;
   bellow_update(hall_total);
   bellow_send_cc();
 
+  /* Always log a direction change; otherwise only when log_bellow is set and the
+   * combined reading has moved enough to be worth a line. */
   uint32_t hall_total_delta = hall_total > hall_total_prev ? hall_total - hall_total_prev : hall_total_prev - hall_total;
-  if (hall_total_delta > 16)
+  if(g_properties->log_bellow)
   {
-    hall_total_prev = hall_total;
-    printf("HALL0=%u HALL1=%u TOTAL=%u\r\n", (unsigned)hall0, (unsigned)hall1, (unsigned)hall_total);
+    if (g_bellows != bellows_prev || hall_total_delta > 16)
+    {
+      static const char *const dir_name[] = { "PULL", "PUSH", "NEUTRAL" };
+      hall_total_prev = hall_total;
+      printf("HALL0=%u HALL1=%u TOTAL=%u DIR=%s\r\n",
+            (unsigned)hall0, (unsigned)hall1, (unsigned)hall_total, dir_name[g_bellows]);
+    }
   }
 }

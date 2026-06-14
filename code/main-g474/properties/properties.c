@@ -17,7 +17,8 @@ static const property_desc_t g_prop_desc[] = {
  * preprocessor would rewrite e.g. ".type" into ".uint16_t". */
 #define PROPERTY(ptag, ctype, pname, ...)                                      \
   { .type = PROPERTY_TYPE_ENUM(ctype), .name = #pname, .tag = (ptag),          \
-    .offset = (uint16_t)offsetof(properties_t, pname), __VA_ARGS__ },
+    .offset = (uint16_t)offsetof(properties_t, pname),                         \
+    PROPERTY_DEFAULTS(ctype) __VA_ARGS__ },
 #include "property_table.def"
 #undef PROPERTY
 };
@@ -34,7 +35,7 @@ static void property__check_unique_tags(int v)
 {
   switch (v)
   {
-#define PROPERTY(tg, ct, nm, ...) case ((tg) ? (tg) : (-1 - __COUNTER__)):
+#define PROPERTY(tg, ct, nm, ...) case ((tg) ? (int)(tg) : (-1 - __COUNTER__)):
 #include "property_table.def"
 #undef PROPERTY
     default: break;
