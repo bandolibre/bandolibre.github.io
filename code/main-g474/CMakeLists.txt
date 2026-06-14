@@ -46,6 +46,7 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
     app/bellow.c
+    app/keyboard.c
     properties/properties.c
     properties/properties_console.c
     ../third_party/microrl/src/microrl.c
