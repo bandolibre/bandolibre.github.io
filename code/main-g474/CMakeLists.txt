@@ -45,6 +45,7 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
+    app/bellow.c
     properties/properties.c
     properties/properties_console.c
     ../third_party/microrl/src/microrl.c
@@ -72,6 +73,7 @@ set_source_files_properties(
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
     .
+    app
     properties
     ../third_party/microrl/src
     ../common/console

@@ -28,6 +28,7 @@
 #include "usb_app.h"
 #include "spi_link.h"
 #include "keyboard/keyboard_layout.h"
+#include "app/bellow.h"
 #include "properties.h"
 #include "properties_console.h"
 
@@ -118,96 +119,6 @@ static void swo_print(const char *s)
 /* Press/release hysteresis: a hall reading falls as a key is pressed and rises
  * back as it is released. key_release > key_press gives a dead band so a key
  * resting near the trip point doesn't chatter. See g_properties (properties.h). */
-
-/* The bandoneon is bisonoric: each key sounds a different note on push vs pull.
- * g_bellows holds that direction and g_bellow_intensity (0..1024) how hard the
- * bellows is being pushed or pulled; both are derived from the combined hall
- * reading (hall0+hall1) by bellows_update() in the main loop. */
-static bellows_t g_bellows = BELLOWS_NEUTRAL;
-static uint16_t g_bellow_intensity = 0;
-
-/* Combined-hall calibration: center is the at-rest reading, hard push/pull
- * the readings at full travel. The deadzone sets how far from center the
- * bellows must move to leave BELLOWS_NEUTRAL (no air moves there, so
- * note_table maps every key to NOTE_NONE). The hysteresis margin then has to
- * be given back before returning to NEUTRAL, so a bellows resting right at
- * the deadzone edge doesn't chatter between NEUTRAL and PUSH/PULL. These are
- * the bellow_* properties in g_properties (properties.h). */
-
-/* Updates g_bellows/g_bellow_intensity from the combined hall reading.
- * In NEUTRAL, intensity is 0 and direction holds until the reading passes the
- * deadzone edge. In PUSH/PULL, intensity scales linearly from the deadzone
- * edge to the hard push/pull reading (clamped to 1024: 0 is barely moving
- * air, 1024 is full force), and direction holds until the reading comes back
- * past the deadzone edge by bellow_hyst. */
-static void bellows_update(uint32_t hall_total)
-{
-  uint32_t center = g_properties->bellow_center;
-  uint32_t hyst   = g_properties->bellow_hyst;
-  uint32_t push_edge = center - g_properties->bellow_dead;
-  uint32_t pull_edge = center + g_properties->bellow_dead;
-
-  switch (g_bellows)
-  {
-    case BELLOWS_PUSH:
-      if (hall_total >= push_edge + hyst) g_bellows = BELLOWS_NEUTRAL;
-      break;
-    case BELLOWS_PULL:
-      if (hall_total <= pull_edge - hyst) g_bellows = BELLOWS_NEUTRAL;
-      break;
-    default:
-      if (hall_total < push_edge) g_bellows = BELLOWS_PUSH;
-      else if (hall_total > pull_edge) g_bellows = BELLOWS_PULL;
-      break;
-  }
-
-  if (g_bellows == BELLOWS_PUSH)
-  {
-    uint32_t span = push_edge - g_properties->bellow_full_push;
-    uint32_t d = hall_total < push_edge ? push_edge - hall_total : 0;
-    g_bellow_intensity = (uint16_t)(d >= span ? 1024 : (d * 1024) / span);
-  }
-  else if (g_bellows == BELLOWS_PULL)
-  {
-    uint32_t span = g_properties->bellow_full_pull - pull_edge;
-    uint32_t d = hall_total > pull_edge ? hall_total - pull_edge : 0;
-    g_bellow_intensity = (uint16_t)(d >= span ? 1024 : (d * 1024) / span);
-  }
-  else
-  {
-    g_bellow_intensity = 0;
-  }
-}
-
-/* CC#11 (Expression) hysteresis, in the same 0..1024 units as
- * g_bellow_intensity: only resent once intensity has moved by at least
- * bellow_cchyst, so sensor noise doesn't flood the link with near-identical CCs.
- * bellow_ccper caps how often CC#11 is sent, independent of the hysteresis check,
- * so a fast-moving bellows can't flood the link. Both are g_properties fields. */
-
-/* Sends CC#11 (Expression) from g_bellow_intensity, scaled to 0..127, when it
- * has moved by at least bellow_cchyst since the last send (or on the first call)
- * and at most every bellow_ccper ms. Call once per main loop iteration after
- * bellows_update(). */
-static void bellows_send_cc(void)
-{
-  static uint16_t last_intensity;
-  static uint8_t have_last;
-  static uint32_t last_tick;
-
-  uint32_t now = HAL_GetTick();
-  if (have_last && (now - last_tick) < g_properties->bellow_ccper) return;
-
-  uint16_t intensity = g_bellow_intensity;
-  uint16_t delta = intensity > last_intensity ? intensity - last_intensity : last_intensity - intensity;
-  if (!have_last || delta >= g_properties->bellow_cchyst)
-  {
-    last_intensity = intensity;
-    last_tick = now;
-    have_last = 1;
-    usb_app_midi_control_change(11, (uint8_t)((intensity * 127) / 1024));
-  }
-}
 
 typedef struct
 {
@@ -316,13 +227,13 @@ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
   b->needs_resync = 1;
 }
 
-/* Sends NOTE ON for key k on wing_id using the current g_bellows mapping, if
+/* Sends NOTE ON for key k on wing_id using the current bellows mapping, if
  * it isn't already sounding and that mapping has a note (it doesn't in
  * BELLOWS_NEUTRAL, where no air moves). No-op otherwise. */
 static void bus_note_on(spi_bus_t *b, uint8_t wing_id, int k)
 {
   if (b->sounding_note[k] != NOTE_NONE) return;
-  uint8_t note = note_table[wing_id][g_bellows][k];
+  uint8_t note = note_table[wing_id][bellow_direction()][k];
   if (note == NOTE_NONE) return;
   b->sounding_note[k] = note;
   printf("NOTE ON  %s wing=%u key=%2d note=%3u\r\n", b->name, wing_id, k, note);
@@ -340,7 +251,7 @@ static void bus_note_off(spi_bus_t *b, uint8_t wing_id, int k)
   b->sounding_note[k] = NOTE_NONE;
 }
 
-/* Called once from the main loop whenever g_bellows changes. Entering
+/* Called once from the main loop whenever the bellows direction changes. Entering
  * PUSH/PULL from NEUTRAL fires NOTE ON for keys already held down; entering
  * NEUTRAL fires NOTE OFF for keys currently sounding, even if still held,
  * since no air moves at rest. PUSH<->PULL never happens directly (NEUTRAL
@@ -351,7 +262,7 @@ static void bus_bellows_changed(spi_bus_t *b)
   uint8_t wing_id = b->last_good_wing;
   for (int k = 0; k < SPI_LINK_NUM_KEYS; k++)
   {
-    if (g_bellows == BELLOWS_NEUTRAL) bus_note_off(b, wing_id, k);
+    if (bellow_direction() == BELLOWS_NEUTRAL) bus_note_off(b, wing_id, k);
     else if (b->key_pressed[k])       bus_note_on(b, wing_id, k);
   }
 }
@@ -627,14 +538,14 @@ int main(void)
     HAL_GPIO_WritePin(HALL_NEN_GPIO_Port, HALL_NEN_Pin, GPIO_PIN_SET);
 
     uint32_t hall_total = hall0 + hall1;
-    bellows_t bellows_prev = g_bellows;
-    bellows_update(hall_total);
-    if (g_bellows != bellows_prev)
+    bellows_t bellows_prev = bellow_direction();
+    bellow_update(hall_total);
+    if (bellow_direction() != bellows_prev)
     {
       for (int i = 0; i < 2; i++)
         bus_bellows_changed(&g_bus[i]);
     }
-    bellows_send_cc();
+    bellow_send_cc();
     uint32_t hall_total_delta = hall_total > hall_total_prev ? hall_total - hall_total_prev : hall_total_prev - hall_total;
     if (hall_total_delta > 16)
     {
