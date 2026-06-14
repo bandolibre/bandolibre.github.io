@@ -85,13 +85,6 @@ static void MX_USB_PCD_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-static void delay_us(uint32_t us)
-{
-  uint32_t cycles = us * (SystemCoreClock / 1000000U);
-  uint32_t start = DWT->CYCCNT;
-  while ((DWT->CYCCNT - start) < cycles);
-}
-
 /* Sends a string over SWO ITM port 0; no-op if no debugger has enabled tracing */
 static void swo_print(const char *s)
 {
@@ -220,7 +213,6 @@ int main(void)
   uint8_t fn_prev = 0xFF;
   uint8_t exp_present_prev = 0xFF, sus_present_prev = 0xFF;
   uint32_t exp_val_prev = 0xFFFF, sus_val_prev = 0xFFFF;
-  uint32_t hall_total_prev = 0xFFFFFFFF;
   uint32_t last_rate_tick = HAL_GetTick();
   while (1)
   {
@@ -229,35 +221,8 @@ int main(void)
     /* USER CODE BEGIN 3 */
     usb_app_task();
 
-    // Hall sensors
-    //
-    HAL_GPIO_WritePin(HALL_NEN_GPIO_Port, HALL_NEN_Pin, GPIO_PIN_RESET);
-    /* Settling budget: gate RC (R5||R6 * Ciss_Q1 = 909R * 130pF, 5t~600ns) +
-     * VDDH caps (RDS_on_Q1 * (CP1+CP2) = ~120mO * 200nF, 5t~120ns) +
-     * SC4015SO power-on start <1us (datasheet) => worst case <3us; 5us = ~1.7x margin. */
-    delay_us(5);
-
-    HAL_ADC_Start(&hadc3);
-    HAL_ADC_Start(&hadc4);
-    HAL_ADC_PollForConversion(&hadc3, 10);
-    uint32_t hall0 = HAL_ADC_GetValue(&hadc3);
-    HAL_ADC_PollForConversion(&hadc4, 10);
-    uint32_t hall1 = HAL_ADC_GetValue(&hadc4);
-
-    HAL_GPIO_WritePin(HALL_NEN_GPIO_Port, HALL_NEN_Pin, GPIO_PIN_SET);
-
-    uint32_t hall_total = hall0 + hall1;
-    bellows_t bellows_prev = bellow_direction();
-    bellow_update(hall_total);
-    if (bellow_direction() != bellows_prev)
+    if (bellow_poll())
       keyboard_bellows_changed();
-    bellow_send_cc();
-    uint32_t hall_total_delta = hall_total > hall_total_prev ? hall_total - hall_total_prev : hall_total_prev - hall_total;
-    if (hall_total_delta > 16)
-    {
-      hall_total_prev = hall_total;
-      printf("HALL0=%u HALL1=%u TOTAL=%u\r\n", (unsigned)hall0, (unsigned)hall1, (unsigned)hall_total);
-    }
 
     /* Decode any wing frames received since the last iteration, recover any bus
      * that lost alignment, then surface link errors (throttled) and a 1 Hz

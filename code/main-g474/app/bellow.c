@@ -1,7 +1,14 @@
 #include "bellow.h"
+
+#include <stdio.h>
+
 #include "main.h"
 #include "properties.h"
 #include "usb_app.h"
+
+/* ADC handles for the two hall sensors, defined by the CubeMX-generated main.c. */
+extern ADC_HandleTypeDef hadc3;
+extern ADC_HandleTypeDef hadc4;
 
 /* Direction holds and intensity (0..1024) of how hard the bellows is being
  * pushed or pulled; both are derived from the combined hall reading by
@@ -22,7 +29,8 @@ bellows_t bellow_direction(void)
   return g_bellows;
 }
 
-void bellow_update(uint32_t hall_total)
+/* Updates direction/intensity from the combined hall reading (see bellow_poll). */
+static void bellow_update(uint32_t hall_total)
 {
   uint32_t center = g_properties->bellow_center;
   uint32_t hyst   = g_properties->bellow_hyst;
@@ -66,7 +74,7 @@ void bellow_update(uint32_t hall_total)
  * noise doesn't flood the link with near-identical CCs. bellow_ccper caps how
  * often CC#11 is sent, independent of the hysteresis check, so a fast-moving
  * bellows can't flood the link. Both are g_properties fields. */
-void bellow_send_cc(void)
+static void bellow_send_cc(void)
 {
   static uint16_t last_intensity;
   static uint8_t have_last;
@@ -84,4 +92,51 @@ void bellow_send_cc(void)
     have_last = 1;
     usb_app_midi_control_change(11, (uint8_t)((intensity * 127) / 1024));
   }
+}
+
+static void delay_us(uint32_t us)
+{
+  uint32_t cycles = us * (SystemCoreClock / 1000000U);
+  uint32_t start = DWT->CYCCNT;
+  while ((DWT->CYCCNT - start) < cycles);
+}
+
+/* Reads both hall sensors, updates the bellows direction/intensity, and emits
+ * the expression CC. Returns true if the direction changed this call, so the
+ * caller can re-evaluate sounding notes (keyboard_bellows_changed()). Call once
+ * per main loop iteration. */
+bool bellow_poll(void)
+{
+  static uint32_t hall_total_prev = 0xFFFFFFFF;
+
+  /* The two hall sensors share a gate-switched supply (HALL_NEN). Enable it,
+   * let the gate and sensor settle, sample both, then disable to save power. */
+  HAL_GPIO_WritePin(HALL_NEN_GPIO_Port, HALL_NEN_Pin, GPIO_PIN_RESET);
+  /* Settling budget: gate RC (R5||R6 * Ciss_Q1 = 909R * 130pF, 5t~600ns) +
+   * VDDH caps (RDS_on_Q1 * (CP1+CP2) = ~120mO * 200nF, 5t~120ns) +
+   * SC4015SO power-on start <1us (datasheet) => worst case <3us; 5us = ~1.7x margin. */
+  delay_us(5);
+
+  HAL_ADC_Start(&hadc3);
+  HAL_ADC_Start(&hadc4);
+  HAL_ADC_PollForConversion(&hadc3, 10);
+  uint32_t hall0 = HAL_ADC_GetValue(&hadc3);
+  HAL_ADC_PollForConversion(&hadc4, 10);
+  uint32_t hall1 = HAL_ADC_GetValue(&hadc4);
+
+  HAL_GPIO_WritePin(HALL_NEN_GPIO_Port, HALL_NEN_Pin, GPIO_PIN_SET);
+
+  uint32_t hall_total = hall0 + hall1;
+  bellows_t bellows_prev = g_bellows;
+  bellow_update(hall_total);
+  bellow_send_cc();
+
+  uint32_t hall_total_delta = hall_total > hall_total_prev ? hall_total - hall_total_prev : hall_total_prev - hall_total;
+  if (hall_total_delta > 16)
+  {
+    hall_total_prev = hall_total;
+    printf("HALL0=%u HALL1=%u TOTAL=%u\r\n", (unsigned)hall0, (unsigned)hall1, (unsigned)hall_total);
+  }
+
+  return g_bellows != bellows_prev;
 }
