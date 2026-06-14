@@ -27,7 +27,7 @@
 #include "console.h"
 #include "usb_app.h"
 #include "spi_link.h"
-#include "keyboard/keyboard_layout.h"
+#include "app/keyboard_layout.h"
 #include "app/bellow.h"
 #include "properties.h"
 #include "properties_console.h"

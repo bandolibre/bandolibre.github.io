@@ -2,7 +2,7 @@
 #define APP_BELLOW_H
 
 #include <stdint.h>
-#include "keyboard/keyboard_layout.h"
+#include "keyboard_layout.h"
 
 /* The bandoneon is bisonoric: each key sounds a different note on push vs pull.
  * This module tracks the bellows direction and how hard it is being pushed or

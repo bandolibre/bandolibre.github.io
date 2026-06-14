@@ -314,7 +314,7 @@ def main():
         print(f"warning: {w}", file=sys.stderr)
 
     header = generate_header(table)
-    out_dir = HERE.parent / "main-g474" / "keyboard"
+    out_dir = HERE.parent / "main-g474" / "app"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / "keyboard_layout.h"
     out_path.write_text(header, encoding="utf-8")
