@@ -295,20 +295,30 @@ void keyboard_init(void)
   }
 }
 
+/* Re-evaluates sounding notes for both buses when the bellows direction has
+ * changed since the last poll (see bus_bellows_changed). */
+static void keyboard_bellows_changed(void)
+{
+  for (int i = 0; i < 2; i++)
+    bus_bellows_changed(&g_bus[i]);
+}
+
 void keyboard_poll(void)
 {
+  static bellows_t last_bellows = BELLOWS_NEUTRAL;
+  bellows_t bellows = bellow_direction();
+  if (bellows != last_bellows)
+  {
+    last_bellows = bellows;
+    keyboard_bellows_changed();
+  }
+
   for (int i = 0; i < 2; i++)
   {
     bus_poll(&g_bus[i]);
     bus_service_resync(&g_bus[i]);
     bus_log_errors(&g_bus[i]);
   }
-}
-
-void keyboard_bellows_changed(void)
-{
-  for (int i = 0; i < 2; i++)
-    bus_bellows_changed(&g_bus[i]);
 }
 
 void keyboard_print_rates(uint32_t dt_ms)

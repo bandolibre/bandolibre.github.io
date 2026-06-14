@@ -25,11 +25,6 @@ void keyboard_init(void);
  * once per main loop iteration. */
 void keyboard_poll(void);
 
-/* Re-evaluates sounding notes on both buses after a bellows direction change
- * (NOTE ON for held keys entering PUSH/PULL, NOTE OFF when entering NEUTRAL).
- * Call from the main loop whenever bellow_direction() changes. */
-void keyboard_bellows_changed(void);
-
 /* Prints the 1 Hz per-bus reception rates (good/misaligned/crc/bus per second),
  * dt_ms being the elapsed time since the last call. */
 void keyboard_print_rates(uint32_t dt_ms);

@@ -102,10 +102,9 @@ static void delay_us(uint32_t us)
 }
 
 /* Reads both hall sensors, updates the bellows direction/intensity, and emits
- * the expression CC. Returns true if the direction changed this call, so the
- * caller can re-evaluate sounding notes (keyboard_bellows_changed()). Call once
- * per main loop iteration. */
-bool bellow_poll(void)
+ * the expression CC. Call once per main loop iteration. Consumers read the
+ * result via bellow_direction() and track changes themselves. */
+void bellow_poll(void)
 {
   static uint32_t hall_total_prev = 0xFFFFFFFF;
 
@@ -127,7 +126,6 @@ bool bellow_poll(void)
   HAL_GPIO_WritePin(HALL_NEN_GPIO_Port, HALL_NEN_Pin, GPIO_PIN_SET);
 
   uint32_t hall_total = hall0 + hall1;
-  bellows_t bellows_prev = g_bellows;
   bellow_update(hall_total);
   bellow_send_cc();
 
@@ -137,6 +135,4 @@ bool bellow_poll(void)
     hall_total_prev = hall_total;
     printf("HALL0=%u HALL1=%u TOTAL=%u\r\n", (unsigned)hall0, (unsigned)hall1, (unsigned)hall_total);
   }
-
-  return g_bellows != bellows_prev;
 }

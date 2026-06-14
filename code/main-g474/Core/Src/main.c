@@ -221,8 +221,7 @@ int main(void)
     /* USER CODE BEGIN 3 */
     usb_app_task();
 
-    if (bellow_poll())
-      keyboard_bellows_changed();
+    bellow_poll();
 
     /* Decode any wing frames received since the last iteration, recover any bus
      * that lost alignment, then surface link errors (throttled) and a 1 Hz

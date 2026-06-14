@@ -14,8 +14,8 @@
 bellows_t bellow_direction(void);
 
 /* Samples both hall sensors, updates the direction/intensity, and emits the
- * expression CC. Returns true if the direction changed this call (so the caller
- * can re-evaluate sounding notes). Call once per main loop iteration. */
-bool bellow_poll(void);
+ * expression CC. Call once per main loop iteration. Read the result via
+ * bellow_direction(); consumers track changes themselves. */
+void bellow_poll(void);
 
 #endif /* APP_BELLOW_H */
