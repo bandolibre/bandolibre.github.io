@@ -1,0 +1,48 @@
+/* Single source of truth for the global property system.
+ *
+ * No header guard: this file is #included repeatedly, each time with a
+ * different PROPERTY() definition, to generate the live-value struct, the
+ * descriptor table and the compile-time tag check.
+ *
+ * PROPERTY(tag, type, name, <named metadata...>)
+ *   tag             permanent blob identity used by the persistence layer.
+ *                   NEVER reuse a tag, even after a property is removed.
+ *                   0 (PROPERTY_TAG_NONE) marks a transient (non-persistent) property.
+ *   type            C type of the value: uint16_t or bool
+ *   name            struct member (direct read g_properties->name) and, stringized,
+ *                   the lookup name
+ *   .default_value  initial value and the value property_reset() restores
+ *                   (bool: 0/1). Named .default would clash with the C keyword.
+ *   .min .max       inclusive bounds; set() clamps, flash load defaults on violation
+ *   .description    human-readable text for the editor
+ *
+ * Reserved (removed) tags: (none yet)
+ */
+
+PROPERTY(1, uint16_t, key_press,
+         .default_value = 1900, .min = 0, .max = 4095,
+         .description = "ADC below this -> key pressed")
+PROPERTY(2, uint16_t, key_release,
+         .default_value = 2100, .min = 0, .max = 4095,
+         .description = "ADC above this -> key released")
+PROPERTY(3, uint16_t, bellow_center,
+         .default_value = 3775, .min = 0, .max = 8191,
+         .description = "Combined hall reading at rest")
+PROPERTY(4, uint16_t, bellow_dead,
+         .default_value = 40, .min = 0, .max = 4095,
+         .description = "Neutral half-width around center")
+PROPERTY(5, uint16_t, bellow_hyst,
+         .default_value = 20, .min = 0, .max = 4095,
+         .description = "Margin given back before returning to neutral")
+PROPERTY(6, uint16_t, bellow_full_push,
+         .default_value = 3400, .min = 0, .max = 8191,
+         .description = "Combined hall reading at full push")
+PROPERTY(7, uint16_t, bellow_full_pull,
+         .default_value = 4200, .min = 0, .max = 8191,
+         .description = "Combined hall reading at full pull")
+PROPERTY(8, uint16_t, bellow_cchyst,
+         .default_value = 64, .min = 0, .max = 1024,
+         .description = "Min expression-CC delta before resending")
+PROPERTY(9, uint16_t, bellow_ccper,
+         .default_value = 10, .min = 1, .max = 1000,
+         .description = "Min milliseconds between expression-CC sends")

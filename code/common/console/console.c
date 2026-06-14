@@ -23,6 +23,10 @@ static void console_print(const char *str)
 
 extern int console_execute(int argc, const char * const *argv);
 
+/* Optional tab-completion provider. If the application defines it, microrl uses
+ * it; if not, the weak symbol resolves to NULL and completion is simply off. */
+extern char ** console_complete(int argc, const char * const *argv) __attribute__((weak));
+
 void console_rx_callback(uint8_t ch)
 {
   microrl_insert_char(&console_rl, ch);
@@ -52,6 +56,7 @@ void console_init(UART_HandleTypeDef *huart, IRQn_Type irqn)
 
   microrl_init(&console_rl, console_print);
   microrl_set_execute_callback(&console_rl, console_execute);
+  microrl_set_complete_callback(&console_rl, console_complete);
 
   HAL_UART_Receive_IT(console_uart, &console_rx_char, 1);
 }

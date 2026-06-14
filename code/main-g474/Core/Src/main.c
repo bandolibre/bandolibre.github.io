@@ -28,6 +28,8 @@
 #include "usb_app.h"
 #include "spi_link.h"
 #include "keyboard/keyboard_layout.h"
+#include "properties.h"
+#include "properties_console.h"
 
 /* USER CODE END Includes */
 
@@ -114,10 +116,8 @@ static void swo_print(const char *s)
  * are dropped and counted. */
 
 /* Press/release hysteresis: a hall reading falls as a key is pressed and rises
- * back as it is released. release_threshold > press_threshold gives a dead band
- * so a key resting near the trip point doesn't chatter. */
-#define KEYBOARD_PRESS_THRESHOLD   1900
-#define KEYBOARD_RELEASE_THRESHOLD 2100
+ * back as it is released. key_release > key_press gives a dead band so a key
+ * resting near the trip point doesn't chatter. See g_properties (properties.h). */
 
 /* The bandoneon is bisonoric: each key sounds a different note on push vs pull.
  * g_bellows holds that direction and g_bellow_intensity (0..1024) how hard the
@@ -131,31 +131,29 @@ static uint16_t g_bellow_intensity = 0;
  * bellows must move to leave BELLOWS_NEUTRAL (no air moves there, so
  * note_table maps every key to NOTE_NONE). The hysteresis margin then has to
  * be given back before returning to NEUTRAL, so a bellows resting right at
- * the deadzone edge doesn't chatter between NEUTRAL and PUSH/PULL. */
-#define BELLOWS_CENTER     3775
-#define BELLOWS_DEADZONE   40
-#define BELLOWS_HYSTERESIS 20
-#define BELLOWS_HARD_PUSH  3400
-#define BELLOWS_HARD_PULL  4200
+ * the deadzone edge doesn't chatter between NEUTRAL and PUSH/PULL. These are
+ * the bellow_* properties in g_properties (properties.h). */
 
 /* Updates g_bellows/g_bellow_intensity from the combined hall reading.
  * In NEUTRAL, intensity is 0 and direction holds until the reading passes the
  * deadzone edge. In PUSH/PULL, intensity scales linearly from the deadzone
  * edge to the hard push/pull reading (clamped to 1024: 0 is barely moving
  * air, 1024 is full force), and direction holds until the reading comes back
- * past the deadzone edge by BELLOWS_HYSTERESIS. */
+ * past the deadzone edge by bellow_hyst. */
 static void bellows_update(uint32_t hall_total)
 {
-  uint32_t push_edge = BELLOWS_CENTER - BELLOWS_DEADZONE;
-  uint32_t pull_edge = BELLOWS_CENTER + BELLOWS_DEADZONE;
+  uint32_t center = g_properties->bellow_center;
+  uint32_t hyst   = g_properties->bellow_hyst;
+  uint32_t push_edge = center - g_properties->bellow_dead;
+  uint32_t pull_edge = center + g_properties->bellow_dead;
 
   switch (g_bellows)
   {
     case BELLOWS_PUSH:
-      if (hall_total >= push_edge + BELLOWS_HYSTERESIS) g_bellows = BELLOWS_NEUTRAL;
+      if (hall_total >= push_edge + hyst) g_bellows = BELLOWS_NEUTRAL;
       break;
     case BELLOWS_PULL:
-      if (hall_total <= pull_edge - BELLOWS_HYSTERESIS) g_bellows = BELLOWS_NEUTRAL;
+      if (hall_total <= pull_edge - hyst) g_bellows = BELLOWS_NEUTRAL;
       break;
     default:
       if (hall_total < push_edge) g_bellows = BELLOWS_PUSH;
@@ -165,13 +163,13 @@ static void bellows_update(uint32_t hall_total)
 
   if (g_bellows == BELLOWS_PUSH)
   {
-    uint32_t span = push_edge - BELLOWS_HARD_PUSH;
+    uint32_t span = push_edge - g_properties->bellow_full_push;
     uint32_t d = hall_total < push_edge ? push_edge - hall_total : 0;
     g_bellow_intensity = (uint16_t)(d >= span ? 1024 : (d * 1024) / span);
   }
   else if (g_bellows == BELLOWS_PULL)
   {
-    uint32_t span = BELLOWS_HARD_PULL - pull_edge;
+    uint32_t span = g_properties->bellow_full_pull - pull_edge;
     uint32_t d = hall_total > pull_edge ? hall_total - pull_edge : 0;
     g_bellow_intensity = (uint16_t)(d >= span ? 1024 : (d * 1024) / span);
   }
@@ -182,18 +180,15 @@ static void bellows_update(uint32_t hall_total)
 }
 
 /* CC#11 (Expression) hysteresis, in the same 0..1024 units as
- * g_bellow_intensity: only resent once intensity has moved by at least this
- * much, so sensor noise doesn't flood the link with near-identical CCs. */
-#define BELLOWS_CC_HYSTERESIS 64
-
-/* Caps how often CC#11 is sent, independent of the hysteresis check, so a
- * fast-moving bellows can't flood the link beyond what a host needs. */
-#define BELLOWS_CC_PERIOD_MS (1000 / 100) /* 100 Hz */
+ * g_bellow_intensity: only resent once intensity has moved by at least
+ * bellow_cchyst, so sensor noise doesn't flood the link with near-identical CCs.
+ * bellow_ccper caps how often CC#11 is sent, independent of the hysteresis check,
+ * so a fast-moving bellows can't flood the link. Both are g_properties fields. */
 
 /* Sends CC#11 (Expression) from g_bellow_intensity, scaled to 0..127, when it
- * has moved by at least BELLOWS_CC_HYSTERESIS since the last send (or on the
- * first call) and at most every BELLOWS_CC_PERIOD_MS. Call once per main loop
- * iteration after bellows_update(). */
+ * has moved by at least bellow_cchyst since the last send (or on the first call)
+ * and at most every bellow_ccper ms. Call once per main loop iteration after
+ * bellows_update(). */
 static void bellows_send_cc(void)
 {
   static uint16_t last_intensity;
@@ -201,11 +196,11 @@ static void bellows_send_cc(void)
   static uint32_t last_tick;
 
   uint32_t now = HAL_GetTick();
-  if (have_last && (now - last_tick) < BELLOWS_CC_PERIOD_MS) return;
+  if (have_last && (now - last_tick) < g_properties->bellow_ccper) return;
 
   uint16_t intensity = g_bellow_intensity;
   uint16_t delta = intensity > last_intensity ? intensity - last_intensity : last_intensity - intensity;
-  if (!have_last || delta >= BELLOWS_CC_HYSTERESIS)
+  if (!have_last || delta >= g_properties->bellow_cchyst)
   {
     last_intensity = intensity;
     last_tick = now;
@@ -378,13 +373,13 @@ static void bus_process_frame(spi_bus_t *b, const uint16_t *frame)
     if (!b->key_min_init || v < b->key_min[k]) b->key_min[k] = v;
     if (b->key_min[k] == 0) continue;          /* unpopulated channel */
 
-    if (!b->key_pressed[k] && v <= KEYBOARD_PRESS_THRESHOLD)
+    if (!b->key_pressed[k] && v <= g_properties->key_press)
     {
       b->key_pressed[k] = 1;
       printf("PRESS %u %d\r\n", wing_id, k);
       bus_note_on(b, wing_id, k);
     }
-    else if (b->key_pressed[k] && v >= KEYBOARD_RELEASE_THRESHOLD)
+    else if (b->key_pressed[k] && v >= g_properties->key_release)
     {
       b->key_pressed[k] = 0;
       bus_note_off(b, wing_id, k);
@@ -506,9 +501,45 @@ int console_execute(int argc, const char * const *argv)
     usb_app_midi_test_note(note);
     printf("Sent MIDI note %u on/off\r\n", note);
   }
+  else if (strcmp(argv[0], "show") == 0)   property_cmd_show();
+  else if (strcmp(argv[0], "get") == 0)    property_cmd_get(argc, argv);
+  else if (strcmp(argv[0], "set") == 0)    property_cmd_set(argc, argv);
+  else if (strcmp(argv[0], "reset") == 0)  property_cmd_reset(argc, argv);
+  else if (strcmp(argv[0], "help") == 0)   property_cmd_help();
   else
-    printf("Unknown command: %s\r\n", argv[0]);
+    printf("Unknown command: %s (try 'help')\r\n", argv[0]);
   return 0;
+}
+
+/* Tab-completion for microrl: completes the command word, and the property name
+ * argument of get/set/reset. Returns a NULL-terminated array of full tokens.
+ * property_complete() caps its output at the buffer size, so growth is safe. */
+#define CONSOLE_COMPL_MAX 32
+char ** console_complete(int argc, const char * const *argv)
+{
+  static const char *commands[] = { "help", "show", "get", "set", "reset", "hello", "midi" };
+  static char *out[CONSOLE_COMPL_MAX + 1];
+  const char *partial = (argc > 0) ? argv[argc - 1] : "";
+  size_t n = 0;
+
+  if (argc <= 1)
+  {
+    size_t plen = strlen(partial);
+    for (size_t i = 0; i < sizeof(commands) / sizeof(commands[0]); i++)
+      if (strncmp(commands[i], partial, plen) == 0)
+        out[n++] = (char *)commands[i];
+  }
+  else if (argc == 2 && (strcmp(argv[0], "get") == 0 ||
+                         strcmp(argv[0], "set") == 0 ||
+                         strcmp(argv[0], "reset") == 0))
+  {
+    const char *names[CONSOLE_COMPL_MAX];
+    size_t m = property_complete(partial, names, CONSOLE_COMPL_MAX);
+    for (size_t i = 0; i < m; i++)
+      out[n++] = (char *)names[i];
+  }
+  out[n] = NULL;
+  return out;
 }
 
 /* USER CODE END 0 */
