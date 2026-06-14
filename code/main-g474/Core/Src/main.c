@@ -490,6 +490,10 @@ int console_execute(int argc, const char * const *argv)
 {
   if (argc == 0)
     return 0;
+  /* microrl ends the input line with LF only (no CR), leaving the cursor under
+   * the command text. Return to column 0 so output prints cleanly below the
+   * preserved "IRin > <cmd>" line instead of overwriting it. */
+  printf("\r\n");
   if (strcmp(argv[0], "hello") == 0)
   {
     printf("Hello, Bandoneo!\r\n");
@@ -696,7 +700,8 @@ int main(void)
       printf("SUS: present=%u val=%u\r\n", sus_present, (unsigned)sus_val);
     }
 
-   
+    /* Restore the console prompt/input line if anything was printed above. */
+    if (console_take_dirty()) console_redraw_prompt();
   }
   /* USER CODE END 3 */
 }
