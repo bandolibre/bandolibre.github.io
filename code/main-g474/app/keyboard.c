@@ -244,6 +244,7 @@ static void bus_service_resync(spi_bus_t *b)
 #define SPI_ERR_LOG_THROTTLE_MS 500
 static void bus_log_errors(spi_bus_t *b)
 {
+  if (!g_properties->log_spi_stat) return;
   uint32_t mis = b->rx_misaligned, crc = b->crc_err, bus = b->bus_err;
   uint32_t new_mis = mis - b->logged_misaligned;
   uint32_t new_crc = crc - b->logged_crc;
@@ -264,6 +265,7 @@ static void bus_log_errors(spi_bus_t *b)
  * receptions; "good" are the only ones decoded into notes. */
 static void bus_print_rates(spi_bus_t *b, uint32_t dt_ms)
 {
+  if (!g_properties->log_spi_stat) return;
   uint32_t good = b->rx_good, mis = b->rx_misaligned, crc = b->crc_err, bus = b->bus_err;
   uint32_t d_good = good - b->last_good;
   uint32_t d_mis  = mis  - b->last_misaligned;

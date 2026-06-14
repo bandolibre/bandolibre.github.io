@@ -50,3 +50,6 @@ PROPERTY(9, uint16_t, bellow_ccper,
 PROPERTY(PROPERTY_TAG_NONE, bool, log_bellow,
          .default_value = 0,
          .description = "Log hall readings and bellows direction each poll")
+PROPERTY(PROPERTY_TAG_NONE, bool, log_spi_stat,
+         .default_value = 0,
+         .description = "Log SPI link error and reception-rate statistics")
