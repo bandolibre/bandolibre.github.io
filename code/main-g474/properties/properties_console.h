@@ -18,7 +18,7 @@ extern "C" {
  * printing it). */
 bool   property_cmd_get(int argc, const char *const *argv);   /* get <name>          */
 bool   property_cmd_set(int argc, const char *const *argv);   /* set <name> <value>  */
-bool   property_cmd_reset(int argc, const char *const *argv); /* reset <name|all>    */
+bool   property_cmd_reset(int argc, const char *const *argv); /* reset <name>        */
 void   property_cmd_show(void);                               /* show: table of all  */
 void   property_cmd_help(void);                               /* help: usage + table */
 
