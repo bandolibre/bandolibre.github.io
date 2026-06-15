@@ -131,6 +131,15 @@ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
   b->needs_resync = 1;
 }
 
+/* True if key k carries a note on wing_id in either bellows direction. Keys
+ * that are NOTE_NONE in both directions aren't physical keys on this wing, so
+ * their SPI channel is noise: never report or track them. */
+static int key_is_mapped(uint8_t wing_id, int k)
+{
+  return note_table[wing_id][BELLOWS_PULL][k] != NOTE_NONE ||
+         note_table[wing_id][BELLOWS_PUSH][k] != NOTE_NONE;
+}
+
 /* Sends NOTE ON for key k on wing_id using the current bellows mapping, if
  * it isn't already sounding and that mapping has a note (it doesn't in
  * BELLOWS_NEUTRAL, where no air moves). No-op otherwise. */
@@ -196,7 +205,8 @@ static void bus_process_frame(spi_bus_t *b, const uint16_t *frame)
     if (!b->key_pressed[k] && v <= g_properties->key_press)
     {
       b->key_pressed[k] = 1;
-      printf("PRESS %u %d\r\n", wing_id, k);
+      if (key_is_mapped(wing_id, k))   /* no note on this wing -> noise */
+        printf("PRESS %u %d\r\n", wing_id, k);
       bus_note_on(b, wing_id, k);
     }
     else if (b->key_pressed[k] && v >= g_properties->key_release)
