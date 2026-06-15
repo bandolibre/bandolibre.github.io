@@ -28,6 +28,7 @@
 #include "usb_app.h"
 #include "app/bellow.h"
 #include "app/keyboard.h"
+#include "app/report.h"
 #include "properties.h"
 #include "properties_console.h"
 
@@ -219,6 +220,11 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    /* Open a live-metrics dashboard frame if one is due; each *_poll() below
+     * renders its enabled show_* section into it, closed by report_end() after
+     * the polls. */
+    report_begin();
+
     usb_app_task();
 
     bellow_poll();
@@ -274,6 +280,10 @@ int main(void)
       sus_val_prev = sus_val;
       printf("SUS: present=%u val=%u\r\n", sus_present, (unsigned)sus_val);
     }
+
+    /* Close the dashboard frame (draws the closing rule, reflows the scroll
+     * region, or tears the dashboard down once no report is enabled). */
+    report_end();
 
     /* Restore the console prompt/input line if anything was printed above. */
     if (console_take_dirty()) console_redraw_prompt();

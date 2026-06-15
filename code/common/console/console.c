@@ -1,4 +1,5 @@
 #include "console.h"
+#include <stdarg.h>
 #include <stdio.h>
 
 microrl_t console_rl;
@@ -73,6 +74,79 @@ void console_redraw_prompt(void)
   if (back > 0) printf("\033[%dD", back);  /* restore cursor position */
   fflush(stdout);
   console_internal_depth--;
+}
+
+/* ===== Live-metrics dashboard ============================================= *
+ * The dashboard is the top dash_rows rows of the screen; logs and the prompt
+ * live in the DECSTBM scroll region below it. dash_row is the 1-based row the
+ * next console_dash_println() will write during a frame; dash_rows is the height
+ * the last completed frame settled on (and thus the current scroll-region top).
+ */
+static int dash_row;   /* rows used so far in the frame in progress (reset by begin) */
+static int dash_rows;  /* height of the dashboard / reserved band; 0 = no dashboard */
+
+/* Re-set the scroll region to leave the top R rows fixed (R==0 releases it back
+ * to full screen). DECSTBM homes the cursor and a resized band may now sit over
+ * stale text or the prompt, so clear the band and re-establish the prompt at the
+ * bottom of the scroll region. \033[999;1H clamps to the last line, so the screen
+ * height never has to be known. Only called when R changes (a show_* toggled). */
+static void console_dash_set_region(int R)
+{
+  console_internal_depth++;
+  if (R > 0) printf("\033[%d;r", R + 1);   /* region = rows R+1..bottom */
+  else       printf("\033[r");             /* full-screen scrolling */
+  for (int i = 1; i <= R; i++) printf("\033[%d;1H\033[K", i);  /* clear the band */
+  printf("\033[999;1H");                   /* park at the bottom row */
+  console_internal_depth--;
+  console_redraw_prompt();                 /* prompt back in the scroll region */
+}
+
+void console_dash_begin(void)
+{
+  console_internal_depth++;
+  /* Hide the cursor and save its prompt position: the frame moves the cursor all
+   * over the dashboard while drawing, which would otherwise be visible as a blink
+   * up in the report band. It is revealed again at the prompt by console_dash_end. */
+  printf("\033[?25l\033[s");
+  fflush(stdout);
+  dash_row = 1;
+}
+
+void console_dash_println(const char *fmt, ...)
+{
+  printf("\033[%d;1H", dash_row);   /* absolute: ignores the scroll margins */
+  va_list ap;
+  va_start(ap, fmt);
+  vprintf(fmt, ap);
+  va_end(ap);
+  printf("\033[K");                 /* clear to end of line, no full clear */
+  dash_row++;
+}
+
+void console_dash_end(unsigned hz)
+{
+  console_dash_println("---- live @ %u Hz "
+                       "------------------------------------------", hz);
+  int used = dash_row - 1;
+  /* Wipe rows a previous, taller frame left behind. */
+  for (int i = dash_row; i <= dash_rows; i++) printf("\033[%d;1H\033[K", i);
+  printf("\033[u");        /* restore cursor to the prompt */
+  if (used != dash_rows)
+  {
+    dash_rows = used;
+    console_dash_set_region(used);   /* self-guarded; also leaves cursor at the prompt */
+  }
+  printf("\033[?25h");     /* reveal the cursor, now back at the prompt */
+  fflush(stdout);
+  console_internal_depth--;
+}
+
+void console_dash_hide(void)
+{
+  if (dash_rows == 0) return;
+  dash_rows = 0;
+  dash_row = 1;
+  console_dash_set_region(0);
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)

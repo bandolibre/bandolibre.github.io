@@ -7,7 +7,9 @@
 #include "spi_link.h"
 #include "keyboard_layout.h"
 #include "bellow.h"
+#include "console.h"
 #include "properties.h"
+#include "report.h"
 #include "usb_app.h"
 
 /* SPI handles for the two wing links, defined by the CubeMX-generated main.c. */
@@ -61,6 +63,10 @@ typedef struct
   /* Snapshots for the 1 Hz rate report and the throttled error log. */
   uint32_t last_good, last_misaligned, last_crc, last_bus;
   uint32_t logged_crc, logged_bus, logged_misaligned, last_err_log_tick;
+
+  /* Separate good-count snapshot for the live (show_spi) dashboard, so its rate
+   * is computed over the report interval without disturbing the 1 Hz log above. */
+  uint32_t rep_last_good, rep_last_tick;
 } spi_bus_t;
 
 static spi_bus_t g_bus[2];
@@ -285,6 +291,22 @@ static void bus_print_rates(spi_bus_t *b, uint32_t dt_ms)
          b->last_good_wing, (unsigned)b->last_bad_word0);
 }
 
+/* One dashboard row per bus: running totals plus a good/s rate over the interval
+ * since this bus' last report frame. */
+static void bus_report(spi_bus_t *b)
+{
+  uint32_t good = b->rx_good;
+  uint32_t now = HAL_GetTick();
+  uint32_t dt = now - b->rep_last_tick;
+  uint32_t rate = dt ? (good - b->rep_last_good) * 1000u / dt : 0;
+  b->rep_last_good = good;
+  b->rep_last_tick = now;
+  console_dash_println("%-6s good=%8lu mis=%6lu crc=%6lu bus=%6lu  %5lu/s  (wing=%u bad0=%u)",
+                       b->name, (unsigned long)good, (unsigned long)b->rx_misaligned,
+                       (unsigned long)b->crc_err, (unsigned long)b->bus_err,
+                       (unsigned long)rate, b->last_good_wing, (unsigned)b->last_bad_word0);
+}
+
 void keyboard_init(void)
 {
   g_bus[0].hspi = &hspi1; g_bus[0].name = "SPI1/L";
@@ -316,11 +338,22 @@ void keyboard_poll(void)
     keyboard_bellows_changed();
   }
 
+  /* Rebase the dashboard rate snapshots when the report is (re-)enabled so the
+   * first frame measures a real interval, not the whole uptime. */
+  static bool show_was_on;
+  if (g_properties->show_spi && !show_was_on)
+  {
+    uint32_t now = HAL_GetTick();
+    for (int i = 0; i < 2; i++) { g_bus[i].rep_last_good = g_bus[i].rx_good; g_bus[i].rep_last_tick = now; }
+  }
+  show_was_on = g_properties->show_spi;
+
   for (int i = 0; i < 2; i++)
   {
     bus_poll(&g_bus[i]);
     bus_service_resync(&g_bus[i]);
     bus_log_errors(&g_bus[i]);
+    if (g_report_due && g_properties->show_spi) bus_report(&g_bus[i]);
   }
 }
 

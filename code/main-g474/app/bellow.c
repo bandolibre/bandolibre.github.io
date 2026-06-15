@@ -2,9 +2,13 @@
 
 #include <stdio.h>
 
+#include "console.h"
 #include "main.h"
 #include "properties.h"
+#include "report.h"
 #include "usb_app.h"
+
+static const char *const dir_name[] = { "PULL", "PUSH", "NEUTRAL" };
 
 /* ADC handles for the two hall sensors, defined by the CubeMX-generated main.c. */
 extern ADC_HandleTypeDef hadc3;
@@ -130,6 +134,15 @@ void bellow_poll(void)
   bellow_update(hall_total);
   bellow_send_cc();
 
+  /* Per-window extremes of the combined reading, refreshed every poll and reset
+   * when the report is (re-)enabled so the first frame never shows stale span. */
+  static uint16_t hall_min, hall_max;
+  static bool show_was_on;
+  if (g_properties->show_bellow && !show_was_on) { hall_min = 0xFFFF; hall_max = 0; }
+  show_was_on = g_properties->show_bellow;
+  if (hall_total < hall_min) hall_min = (uint16_t)hall_total;
+  if (hall_total > hall_max) hall_max = (uint16_t)hall_total;
+
   /* Always log a direction change; otherwise only when log_bellow is set and the
    * combined reading has moved enough to be worth a line. */
   uint32_t hall_total_delta = hall_total > hall_total_prev ? hall_total - hall_total_prev : hall_total_prev - hall_total;
@@ -137,10 +150,17 @@ void bellow_poll(void)
   {
     if (g_bellows != bellows_prev || hall_total_delta > 16)
     {
-      static const char *const dir_name[] = { "PULL", "PUSH", "NEUTRAL" };
       hall_total_prev = hall_total;
       printf("HALL0=%u HALL1=%u TOTAL=%u DIR=%s\r\n",
             (unsigned)hall0, (unsigned)hall1, (unsigned)hall_total, dir_name[g_bellows]);
     }
+  }
+
+  if (g_report_due && g_properties->show_bellow)
+  {
+    console_dash_println("BELLOW  dir=%-7s intensity=%4u  hall0=%4u hall1=%4u total=%5u  (min %u max %u)",
+                         dir_name[g_bellows], g_bellow_intensity,
+                         (unsigned)hall0, (unsigned)hall1, (unsigned)hall_total,
+                         hall_min, hall_max);
   }
 }
