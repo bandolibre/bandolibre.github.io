@@ -15,7 +15,7 @@
 #define _PROMPT_LEN 7
 #define _USE_COMPLETE
 #define _USE_HISTORY
-#define _RING_HISTORY_LEN 256
+#define _RING_HISTORY_LEN 512
 #define _USE_ESC_SEQ
 #define _USE_LIBC_STDIO
 #define _USE_CTLR_C
