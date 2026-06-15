@@ -28,6 +28,7 @@
 #include "usb_app.h"
 #include "app/bellow.h"
 #include "app/keyboard.h"
+#include "app/pedals.h"
 #include "app/report.h"
 #include "properties.h"
 #include "properties_console.h"
@@ -99,6 +100,38 @@ static void swo_print(const char *s)
     }
     s++;
   }
+}
+
+/* One-time boot summary: bus clocks, USB link, and RAM headroom. Static RAM
+ * usage is fixed at link time; the heap budget is the gap between _end and the
+ * MSP stack reservation below _estack (the layout _sbrk in sysmem.c relies on).
+ * USB is full-speed (12 Mbit/s) by hardware config; the host has usually not
+ * enumerated us yet this early in boot. */
+static void print_startup_info(void)
+{
+  extern uint8_t _end;             /* first heap byte (end of .bss) */
+  extern uint8_t _estack;          /* top of RAM */
+  extern uint32_t _Min_Stack_Size; /* MSP stack reserved below _estack */
+
+  const uint32_t ram_base = 0x20000000UL;
+  const uint32_t ram_total = (uint32_t)&_estack - ram_base;
+  const uint32_t stack_resv = (uint32_t)&_Min_Stack_Size;
+  const uint32_t static_use = (uint32_t)&_end - ram_base;
+  const uint32_t heap_free = (uint32_t)&_estack - stack_resv - (uint32_t)&_end;
+
+  printf("\r\n=== Bandoneo main ===\r\n");
+  printf("Clocks: SYSCLK %lu MHz, HCLK %lu MHz, PCLK1 %lu MHz, PCLK2 %lu MHz\r\n",
+         (unsigned long)(HAL_RCC_GetSysClockFreq() / 1000000UL),
+         (unsigned long)(HAL_RCC_GetHCLKFreq() / 1000000UL),
+         (unsigned long)(HAL_RCC_GetPCLK1Freq() / 1000000UL),
+         (unsigned long)(HAL_RCC_GetPCLK2Freq() / 1000000UL));
+  printf("USB: full-speed 12 Mbit/s, 48 MHz kernel clock, %s\r\n",
+         usb_app_mounted() ? "enumerated" : "not yet enumerated");
+  printf("RAM: %lu KiB total, %lu B static, %lu B stack reserved, %lu B heap free\r\n",
+         (unsigned long)(ram_total / 1024UL),
+         (unsigned long)static_use,
+         (unsigned long)stack_resv,
+         (unsigned long)heap_free);
 }
 
 int console_execute(int argc, const char * const *argv)
@@ -211,13 +244,12 @@ int main(void)
   console_init(&huart1, USART1_IRQn);
   usb_app_init();
   keyboard_init();
+  print_startup_info();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   uint8_t fn_prev = 0xFF;
-  uint8_t exp_present_prev = 0xFF, sus_present_prev = 0xFF;
-  uint32_t exp_val_prev = 0xFFFF, sus_val_prev = 0xFFFF;
   uint32_t last_rate_tick = HAL_GetTick();
   while (1)
   {
@@ -260,32 +292,7 @@ int main(void)
              (fn & 4) ? '1' : '0');
     }
 
-    uint8_t exp_present = HAL_GPIO_ReadPin(EXP_PEDAL_INT_GPIO_Port, EXP_PEDAL_INT_Pin) == GPIO_PIN_SET;
-    uint8_t sus_present = HAL_GPIO_ReadPin(SUS_PEDAL_INT_GPIO_Port, SUS_PEDAL_INT_Pin) == GPIO_PIN_SET;
-
-    HAL_ADC_Start(&hadc1);
-    HAL_ADC_PollForConversion(&hadc1, 1);
-    uint32_t exp_val = HAL_ADC_GetValue(&hadc1);
-
-    HAL_ADC_Start(&hadc2);
-    HAL_ADC_PollForConversion(&hadc2, 1);
-    uint32_t sus_val = HAL_ADC_GetValue(&hadc2);
-
-    uint32_t exp_delta = exp_val > exp_val_prev ? exp_val - exp_val_prev : exp_val_prev - exp_val;
-    uint32_t sus_delta = sus_val > sus_val_prev ? sus_val - sus_val_prev : sus_val_prev - sus_val;
-
-    if (exp_present != exp_present_prev || (!exp_present && exp_delta > 16))
-    {
-      exp_present_prev = exp_present;
-      exp_val_prev = exp_val;
-      printf("EXP present=%u val=%u\r\n", exp_present, (unsigned)exp_val);
-    }
-    if (sus_present != sus_present_prev || (!sus_present && sus_delta > 16))
-    {
-      sus_present_prev = sus_present;
-      sus_val_prev = sus_val;
-      printf("SUS: present=%u val=%u\r\n", sus_present, (unsigned)sus_val);
-    }
+    pedals_poll();
 
     /* Close the dashboard frame (draws the closing rule, reflows the scroll
      * region, or tears the dashboard down once no report is enabled). */

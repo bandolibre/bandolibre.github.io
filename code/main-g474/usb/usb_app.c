@@ -23,6 +23,11 @@ void usb_app_init(void)
   tusb_init(0, &dev_init);
 }
 
+bool usb_app_mounted(void)
+{
+  return tud_mounted();
+}
+
 void usb_app_task(void)
 {
   tud_task();

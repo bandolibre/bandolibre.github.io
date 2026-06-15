@@ -48,6 +48,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     app/bellow.c
     app/keyboard.c
     app/midi.c
+    app/pedals.c
     app/report.c
     properties/properties.c
     properties/properties_console.c

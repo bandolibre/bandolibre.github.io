@@ -7,6 +7,7 @@
 #define USB_APP_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,6 +16,11 @@ extern "C" {
 /* Starts the TinyUSB device stack. Call after MX_USB_PCD_Init() so the USB
  * peripheral clock (48 MHz from PLLQ) is already configured. */
 void usb_app_init(void);
+
+/* True once the host has enumerated and configured the device. The link is
+ * always full-speed (12 Mbit/s) by hardware config; this reflects whether a
+ * host is actually attached and has mounted us. */
+bool usb_app_mounted(void);
 
 /* Runs the TinyUSB device task and the CDC console bridge.
  * Call from the main loop on every iteration. */
