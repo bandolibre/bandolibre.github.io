@@ -119,6 +119,7 @@ int console_execute(int argc, const char * const *argv)
     usb_app_midi_test_note(note);
     printf("Sent MIDI note %u on/off\r\n", note);
   }
+  else if (strcmp(argv[0], "bellow_tune") == 0) bellow_tune();
   else if (strcmp(argv[0], "show") == 0)   property_cmd_show();
   else if (strcmp(argv[0], "get") == 0)    property_cmd_get(argc, argv);
   else if (strcmp(argv[0], "set") == 0)    property_cmd_set(argc, argv);
@@ -135,7 +136,7 @@ int console_execute(int argc, const char * const *argv)
 #define CONSOLE_COMPL_MAX 32
 char ** console_complete(int argc, const char * const *argv)
 {
-  static const char *commands[] = { "help", "show", "get", "set", "reset", "hello", "midi" };
+  static const char *commands[] = { "help", "show", "get", "set", "reset", "hello", "midi", "bellow_tune" };
   static char *out[CONSOLE_COMPL_MAX + 1];
   const char *partial = (argc > 0) ? argv[argc - 1] : "";
   size_t n = 0;
@@ -517,7 +518,11 @@ static void MX_ADC3_Init(void)
   hadc3.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc3.Init.DMAContinuousRequests = DISABLE;
   hadc3.Init.Overrun = ADC_OVR_DATA_PRESERVED;
-  hadc3.Init.OversamplingMode = DISABLE;
+  hadc3.Init.OversamplingMode = ENABLE;
+  hadc3.Init.Oversampling.Ratio = ADC_OVERSAMPLING_RATIO_64;
+  hadc3.Init.Oversampling.RightBitShift = ADC_RIGHTBITSHIFT_6;
+  hadc3.Init.Oversampling.TriggeredMode = ADC_TRIGGEREDMODE_SINGLE_TRIGGER;
+  hadc3.Init.Oversampling.OversamplingStopReset = ADC_REGOVERSAMPLING_CONTINUED_MODE;
   if (HAL_ADC_Init(&hadc3) != HAL_OK)
   {
     Error_Handler();
@@ -584,7 +589,11 @@ static void MX_ADC4_Init(void)
   hadc4.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc4.Init.DMAContinuousRequests = DISABLE;
   hadc4.Init.Overrun = ADC_OVR_DATA_PRESERVED;
-  hadc4.Init.OversamplingMode = DISABLE;
+  hadc4.Init.OversamplingMode = ENABLE;
+  hadc4.Init.Oversampling.Ratio = ADC_OVERSAMPLING_RATIO_64;
+  hadc4.Init.Oversampling.RightBitShift = ADC_RIGHTBITSHIFT_6;
+  hadc4.Init.Oversampling.TriggeredMode = ADC_TRIGGEREDMODE_SINGLE_TRIGGER;
+  hadc4.Init.Oversampling.OversamplingStopReset = ADC_REGOVERSAMPLING_CONTINUED_MODE;
   if (HAL_ADC_Init(&hadc4) != HAL_OK)
   {
     Error_Handler();

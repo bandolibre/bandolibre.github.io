@@ -18,4 +18,11 @@ bellows_t bellow_direction(void);
  * bellow_direction(); consumers track changes themselves. */
 void bellow_poll(void);
 
+/* Diagnostic sweep over a range of the bellow_settle_us property: for each
+ * value, repeatedly samples both hall sensors and prints a table of their mean
+ * and standard deviation, to pick the smallest settling delay that reads
+ * stably. Blocks the main loop for a few seconds and restores bellow_settle_us
+ * before returning. Intended for the console 'bellow_tune' command. */
+void bellow_tune(void);
+
 #endif /* APP_BELLOW_H */
