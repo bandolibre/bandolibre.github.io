@@ -141,8 +141,12 @@ static void bus_note_on(spi_bus_t *b, uint8_t wing_id, int k)
   uint8_t note = note_table[wing_id][bellow_direction()][k];
   if (note == NOTE_NONE) return;
   b->sounding_note[k] = note;
-  printf("NOTE ON  %s wing=%u key=%2d note=%3u\r\n", b->name, wing_id, k, note);
-  usb_app_midi_note_on(note, 100);
+  /* Velocity from how hard the bellows is moving (0..1024 -> 1..127). Floored at
+   * 1 so a note triggered just past the neutral deadzone is still audible; 0
+   * would be a NOTE OFF. */
+  uint8_t velocity = (uint8_t)(1 + (uint32_t)bellow_intensity() * 126u / 1024u);
+  printf("NOTE ON  %s wing=%u key=%2d note=%3u vel=%3u\r\n", b->name, wing_id, k, note, velocity);
+  usb_app_midi_note_on(note, velocity);
 }
 
 /* Sends NOTE OFF for key k on wing_id if it is currently sounding. No-op

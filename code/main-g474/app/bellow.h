@@ -13,6 +13,11 @@
 /* Current bellows direction (BELLOWS_NEUTRAL/PUSH/PULL). */
 bellows_t bellow_direction(void);
 
+/* How hard the bellows is currently being pushed or pulled, 0..1024 (0 in
+ * BELLOWS_NEUTRAL). Same units as the CC#11 expression value; consumers use it
+ * to set note-on velocity. */
+uint16_t bellow_intensity(void);
+
 /* Samples both hall sensors, updates the direction/intensity, and emits the
  * expression CC. Call once per main loop iteration. Read the result via
  * bellow_direction(); consumers track changes themselves. */

@@ -34,6 +34,11 @@ bellows_t bellow_direction(void)
   return g_bellows;
 }
 
+uint16_t bellow_intensity(void)
+{
+  return g_bellow_intensity;
+}
+
 /* Updates direction/intensity from the combined hall reading (see bellow_poll). */
 static void bellow_update(uint32_t hall_total)
 {
