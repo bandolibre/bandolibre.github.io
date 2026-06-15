@@ -76,7 +76,7 @@ static void bellow_update(uint32_t hall_total)
 
 /* CC#11 (Expression) hysteresis, in the same 0..1024 units as the intensity:
  * only resent once intensity has moved by at least bellow_cchyst, so sensor
- * noise doesn't flood the link with near-identical CCs. bellow_ccper caps how
+ * noise doesn't flood the link with near-identical CCs. bellow_cc_period_ms caps how
  * often CC#11 is sent, independent of the hysteresis check, so a fast-moving
  * bellows can't flood the link. Both are g_properties fields. */
 static void bellow_send_cc(void)
@@ -86,7 +86,7 @@ static void bellow_send_cc(void)
   static uint32_t last_tick;
 
   uint32_t now = HAL_GetTick();
-  if (have_last && (now - last_tick) < g_properties->bellow_ccper) return;
+  if (have_last && (now - last_tick) < g_properties->bellow_cc_period_ms) return;
 
   uint16_t intensity = g_bellow_intensity;
   uint16_t delta = intensity > last_intensity ? intensity - last_intensity : last_intensity - intensity;
@@ -95,7 +95,7 @@ static void bellow_send_cc(void)
     last_intensity = intensity;
     last_tick = now;
     have_last = 1;
-    usb_app_midi_control_change(11, (uint8_t)((intensity * 127) / 1024));
+    usb_app_midi_control_change(11, (uint8_t)(intensity >> 3));
   }
 }
 
@@ -177,7 +177,7 @@ static void bellow_report(const bellow_sample_t *s, bellows_t bellows_prev)
   uint32_t hall_total_delta = s->total > hall_total_prev ? s->total - hall_total_prev : hall_total_prev - s->total;
   if(g_properties->log_bellow)
   {
-    if (g_bellows != bellows_prev || hall_total_delta > 16)
+    if (g_bellows != bellows_prev || hall_total_delta > g_properties->bellow_cchyst)
     {
       hall_total_prev = s->total;
       printf("HALL0=%u HALL1=%u TOTAL=%u DIR=%s\r\n",

@@ -42,13 +42,13 @@ PROPERTY(7, uint16_t, bellow_full_pull,
          .default_value = 4200, .min = 0, .max = 8191,
          .description = "Combined hall reading at full pull")
 PROPERTY(8, uint16_t, bellow_cchyst,
-         .default_value = 64, .min = 0, .max = 1024,
+         .default_value = 16, .min = 0, .max = 1024,
          .description = "Min expression-CC delta before resending")
-PROPERTY(9, uint16_t, bellow_ccper,
+PROPERTY(9, uint16_t, bellow_cc_period_ms,
          .default_value = 10, .min = 1, .max = 1000,
          .description = "Min milliseconds between expression-CC sends")
 PROPERTY(10, uint16_t, bellow_settle_us,
-         .default_value = 5, .min = 0, .max = 1000,
+         .default_value = 2, .min = 0, .max = 1000,
          .description = "Hall supply settling delay before sampling, microseconds")
 PROPERTY(PROPERTY_TAG_NONE, bool, log_bellow,
          .default_value = 0,

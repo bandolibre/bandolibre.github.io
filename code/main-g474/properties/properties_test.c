@@ -41,7 +41,7 @@ static void test_defaults(void)
   CHECK(g_properties->key_press == 1900);
   CHECK(g_properties->key_release == 2100);
   CHECK(g_properties->bellow_center == 3775);
-  CHECK(g_properties->bellow_ccper == 10);
+  CHECK(g_properties->bellow_cc_period_ms == 10);
 
   /* Same value via the index API. */
   uint16_t v = 0;
@@ -70,9 +70,9 @@ static void test_set_clamp(void)
   CHECK(property_set_u16(i, 60000)); /* above max -> clamps to 4095 */
   CHECK(g_properties->key_press == 4095);
 
-  size_t j = idx("bellow_ccper"); /* range [1,1000] */
+  size_t j = idx("bellow_cc_period_ms"); /* range [1,1000] */
   CHECK(property_set_u16(j, 0));  /* below min -> clamps to 1 */
-  CHECK(g_properties->bellow_ccper == 1);
+  CHECK(g_properties->bellow_cc_period_ms == 1);
 
   CHECK(!property_set_u16(property_count(), 5)); /* bad index */
 }
@@ -105,7 +105,7 @@ static void test_pack_unpack_roundtrip(void)
   property_reset_all();
   property_set_u16(idx("key_press"), 1500);
   property_set_u16(idx("bellow_center"), 3800);
-  property_set_u16(idx("bellow_ccper"), 20);
+  property_set_u16(idx("bellow_cc_period_ms"), 20);
 
   uint8_t buf[256];
   size_t n = property_pack(buf, sizeof(buf));
@@ -118,7 +118,7 @@ static void test_pack_unpack_roundtrip(void)
   CHECK(property_unpack(buf, n));
   CHECK(g_properties->key_press == 1500);
   CHECK(g_properties->bellow_center == 3800);
-  CHECK(g_properties->bellow_ccper == 20);
+  CHECK(g_properties->bellow_cc_period_ms == 20);
   CHECK(g_properties->key_release == 2100); /* untouched -> default */
 
   /* Too-small buffer yields 0 bytes and writes nothing. */
