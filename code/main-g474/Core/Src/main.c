@@ -31,7 +31,7 @@
 #include "app/report.h"
 #include "properties.h"
 #include "properties_console.h"
-#include "app/midi_console.h"
+#include "app/midi.h"
 
 /* USER CODE END Includes */
 
@@ -233,6 +233,8 @@ int main(void)
     report_begin();
 
     usb_app_task();
+
+    midi_poll();
 
     bellow_poll();
 

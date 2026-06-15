@@ -1,12 +1,18 @@
-#ifndef MIDI_CONSOLE_H_
-#define MIDI_CONSOLE_H_
+#ifndef MIDI_H_
+#define MIDI_H_
 
-/* Console / microrl command layer for sending MIDI messages by hand over USB.
- * Kept separate from usb_app.c (which stays printf-free) so these helpers can
- * print usage/errors via printf (\r\n line endings) and parse argv tokens. */
+/* MIDI helpers for the main board: a periodic Active Sensing task and a
+ * console / microrl command layer for sending messages by hand. Kept separate
+ * from usb_app.c (which stays printf-free) so these helpers can print
+ * usage/errors via printf (\r\n line endings) and parse argv tokens. */
 
 #include <stddef.h>
 #include <stdbool.h>
+
+/* Call from the main loop on every iteration. When midi_active_sensing_enable
+ * is set, sends an Active Sensing byte (0xFE) every midi_active_sensing_period
+ * milliseconds so a receiver can detect a dropped link. */
+void midi_poll(void);
 
 /* argv is the usual token array with argv[0] = the command word. If argv[0] is
  * one of the MIDI commands below it is executed (sending one message on cable 0)
@@ -27,4 +33,4 @@ void midi_console_help(void);
  * be NULL/"" to match all); returns the count. Backs a completion callback. */
 size_t midi_console_complete(const char *prefix, const char **out, size_t cap);
 
-#endif /* MIDI_CONSOLE_H_ */
+#endif /* MIDI_H_ */

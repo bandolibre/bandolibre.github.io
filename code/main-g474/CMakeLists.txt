@@ -47,7 +47,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
     app/bellow.c
     app/keyboard.c
-    app/midi_console.c
+    app/midi.c
     app/report.c
     properties/properties.c
     properties/properties_console.c

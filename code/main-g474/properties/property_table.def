@@ -50,6 +50,12 @@ PROPERTY(9, uint16_t, bellow_cc_period_ms,
 PROPERTY(10, uint16_t, bellow_settle_us,
          .default_value = 2, .min = 0, .max = 1000,
          .description = "Hall supply settling delay before sampling, microseconds")
+PROPERTY(11, uint16_t, midi_active_sensing_period,
+         .default_value = 200, .min = 10, .max = 300,
+         .description = "Milliseconds between MIDI Active Sensing bytes")
+PROPERTY(12, bool, midi_active_sensing_enable,
+         .default_value = 1,
+         .description = "Send MIDI Active Sensing (0xFE) periodically")
 PROPERTY(PROPERTY_TAG_NONE, bool, log_bellow,
          .default_value = 0,
          .description = "Log hall readings and bellows direction each poll")

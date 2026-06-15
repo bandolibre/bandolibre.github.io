@@ -1,4 +1,6 @@
-#include "midi_console.h"
+#include "midi.h"
+#include "main.h"        /* HAL_GetTick */
+#include "properties.h"
 #include "usb_app.h"
 
 #include <stdio.h>
@@ -6,6 +8,16 @@
 #include <string.h>
 
 #define MIDI_DEFAULT_VELOCITY 64
+
+void midi_poll(void)
+{
+  static uint32_t last_tick = 0;
+  if (!g_properties->midi_active_sensing_enable) return;
+  uint32_t now = HAL_GetTick();
+  if ((now - last_tick) < g_properties->midi_active_sensing_period) return;
+  last_tick = now;
+  usb_app_midi_active_sensing();
+}
 
 /* Parse argv[idx] as an integer in [lo,hi]. Prints an error and returns false
  * if missing, not a number, or out of range. */
