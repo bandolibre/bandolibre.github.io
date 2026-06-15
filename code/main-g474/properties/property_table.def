@@ -27,7 +27,7 @@ PROPERTY(2, uint16_t, key_release,
          .default_value = 2100, .min = 0, .max = 4095,
          .description = "ADC above this -> key released")
 PROPERTY(3, uint16_t, bellow_center,
-         .default_value = 3775, .min = 0, .max = 8191,
+         .default_value = 3760, .min = 0, .max = 8191,
          .description = "Combined hall reading at rest")
 PROPERTY(4, uint16_t, bellow_dead,
          .default_value = 40, .min = 0, .max = 4095,
