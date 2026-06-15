@@ -1,0 +1,30 @@
+#ifndef MIDI_CONSOLE_H_
+#define MIDI_CONSOLE_H_
+
+/* Console / microrl command layer for sending MIDI messages by hand over USB.
+ * Kept separate from usb_app.c (which stays printf-free) so these helpers can
+ * print usage/errors via printf (\r\n line endings) and parse argv tokens. */
+
+#include <stddef.h>
+#include <stdbool.h>
+
+/* argv is the usual token array with argv[0] = the command word. If argv[0] is
+ * one of the MIDI commands below it is executed (sending one message on cable 0)
+ * and true is returned; otherwise false is returned so the caller can keep
+ * dispatching. A recognised-but-malformed command prints usage and still
+ * returns true. Channel is 1-16; note/controller/value/velocity 0-127.
+ *
+ *   send_note_on  <channel> <note> [velocity]   (velocity defaults to 64)
+ *   send_note_off <channel> <note>
+ *   send_cc       <channel> <controller> <value>
+ */
+bool midi_console_execute(int argc, const char *const *argv);
+
+/* Lists the MIDI command usage. */
+void midi_console_help(void);
+
+/* Fill out[] with up to cap MIDI command names starting with prefix (prefix may
+ * be NULL/"" to match all); returns the count. Backs a completion callback. */
+size_t midi_console_complete(const char *prefix, const char **out, size_t cap);
+
+#endif /* MIDI_CONSOLE_H_ */

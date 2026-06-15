@@ -31,6 +31,7 @@
 #include "app/report.h"
 #include "properties.h"
 #include "properties_console.h"
+#include "app/midi_console.h"
 
 /* USER CODE END Includes */
 
@@ -124,7 +125,8 @@ int console_execute(int argc, const char * const *argv)
   else if (strcmp(argv[0], "get") == 0)    property_cmd_get(argc, argv);
   else if (strcmp(argv[0], "set") == 0)    property_cmd_set(argc, argv);
   else if (strcmp(argv[0], "reset") == 0)  property_cmd_reset(argc, argv);
-  else if (strcmp(argv[0], "help") == 0)   property_cmd_help();
+  else if (strcmp(argv[0], "help") == 0)   { property_cmd_help(); midi_console_help(); }
+  else if (midi_console_execute(argc, argv)) { /* handled a send_* command */ }
   else
     printf("Unknown command: %s (try 'help')\r\n", argv[0]);
   return 0;
@@ -147,6 +149,10 @@ char ** console_complete(int argc, const char * const *argv)
     for (size_t i = 0; i < sizeof(commands) / sizeof(commands[0]); i++)
       if (strncmp(commands[i], partial, plen) == 0)
         out[n++] = (char *)commands[i];
+    const char *midi[CONSOLE_COMPL_MAX];
+    size_t m = midi_console_complete(partial, midi, CONSOLE_COMPL_MAX - n);
+    for (size_t i = 0; i < m; i++)
+      out[n++] = (char *)midi[i];
   }
   else if (argc == 2 && (strcmp(argv[0], "get") == 0 ||
                          strcmp(argv[0], "set") == 0 ||
