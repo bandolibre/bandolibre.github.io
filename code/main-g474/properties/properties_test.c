@@ -198,15 +198,15 @@ static void test_complete(void)
 {
   const char *out[16];
   /* "bellow_" matches the seven bellow_* properties */
-  CHECK(property_complete("bellow_", out, 16) == 7);
+  CHECK(properties_complete("bellow_", out, 16) == 7);
   /* "key_" matches the two key_* properties */
-  CHECK(property_complete("key_", out, 16) == 2);
+  CHECK(properties_complete("key_", out, 16) == 2);
   /* empty prefix matches all */
-  CHECK(property_complete("", out, 16) == property_count());
+  CHECK(properties_complete("", out, 16) == property_count());
   /* cap is honored */
-  CHECK(property_complete("", out, 3) == 3);
+  CHECK(properties_complete("", out, 3) == 3);
   /* no match */
-  CHECK(property_complete("nope", out, 16) == 0);
+  CHECK(properties_complete("nope", out, 16) == 0);
 }
 
 int main(void)

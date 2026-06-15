@@ -58,7 +58,7 @@ static bool has_wildcard(const char *s)
   return strchr(s, '*') || strchr(s, '?');
 }
 
-bool property_cmd_get(int argc, const char *const *argv)
+static bool property_cmd_get(int argc, const char *const *argv)
 {
   if (argc < 2) { printf("usage: get <name>\r\n"); return false; }
   if (has_wildcard(argv[1]))
@@ -92,7 +92,7 @@ static void set_one(size_t i, unsigned long v)
   print_one(i);
 }
 
-bool property_cmd_set(int argc, const char *const *argv)
+static bool property_cmd_set(int argc, const char *const *argv)
 {
   if (argc < 3) { printf("usage: set <name> <value>\r\n"); return false; }
   unsigned long v;
@@ -111,7 +111,7 @@ bool property_cmd_set(int argc, const char *const *argv)
   return true;
 }
 
-bool property_cmd_reset(int argc, const char *const *argv)
+static bool property_cmd_reset(int argc, const char *const *argv)
 {
   if (argc < 2) { printf("usage: reset <name>\r\n"); return false; }
   if (has_wildcard(argv[1]))
@@ -129,7 +129,7 @@ bool property_cmd_reset(int argc, const char *const *argv)
   return true;
 }
 
-void property_cmd_show(void)
+static void property_cmd_show(void)
 {
   printf("%-18s %6s %6s %6s %8s\r\n", "name", "value", "min", "max", "default");
   for (size_t i = 0; i < property_count(); i++)
@@ -139,7 +139,17 @@ void property_cmd_show(void)
   }
 }
 
-void property_cmd_help(void)
+bool properties_execute(int argc, const char *const *argv)
+{
+  if (argc < 1) return false;
+  if (strcmp(argv[0], "show") == 0)  { property_cmd_show();        return true; }
+  if (strcmp(argv[0], "get") == 0)   { property_cmd_get(argc, argv);   return true; }
+  if (strcmp(argv[0], "set") == 0)   { property_cmd_set(argc, argv);   return true; }
+  if (strcmp(argv[0], "reset") == 0) { property_cmd_reset(argc, argv); return true; }
+  return false;
+}
+
+void properties_help(void)
 {
   printf("Property commands:\r\n");
   printf("  show                 list all properties with current value\r\n");
@@ -156,7 +166,7 @@ void property_cmd_help(void)
   }
 }
 
-size_t property_complete(const char *prefix, const char **out, size_t cap)
+size_t properties_complete(const char *prefix, const char **out, size_t cap)
 {
   size_t n = 0;
   size_t plen = prefix ? strlen(prefix) : 0;

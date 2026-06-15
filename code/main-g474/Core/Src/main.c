@@ -121,11 +121,8 @@ int console_execute(int argc, const char * const *argv)
     printf("Sent MIDI note %u on/off\r\n", note);
   }
   else if (strcmp(argv[0], "bellow_tune") == 0) bellow_tune();
-  else if (strcmp(argv[0], "show") == 0)   property_cmd_show();
-  else if (strcmp(argv[0], "get") == 0)    property_cmd_get(argc, argv);
-  else if (strcmp(argv[0], "set") == 0)    property_cmd_set(argc, argv);
-  else if (strcmp(argv[0], "reset") == 0)  property_cmd_reset(argc, argv);
-  else if (strcmp(argv[0], "help") == 0)   { property_cmd_help(); midi_console_help(); }
+  else if (strcmp(argv[0], "help") == 0)   { properties_help(); midi_console_help(); }
+  else if (properties_execute(argc, argv)) { /* handled show/get/set/reset */ }
   else if (midi_console_execute(argc, argv)) { /* handled a send_* command */ }
   else
     printf("Unknown command: %s (try 'help')\r\n", argv[0]);
@@ -159,7 +156,7 @@ char ** console_complete(int argc, const char * const *argv)
                          strcmp(argv[0], "reset") == 0))
   {
     const char *names[CONSOLE_COMPL_MAX];
-    size_t m = property_complete(partial, names, CONSOLE_COMPL_MAX);
+    size_t m = properties_complete(partial, names, CONSOLE_COMPL_MAX);
     for (size_t i = 0; i < m; i++)
       out[n++] = (char *)names[i];
   }
