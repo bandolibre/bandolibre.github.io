@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "console.h"
+#include "keyboard.h"   /* L_MIDI_CH / R_MIDI_CH */
 #include "main.h"
 #include "properties.h"
 #include "report.h"
@@ -100,7 +101,11 @@ static void bellow_send_cc(void)
     last_intensity = intensity;
     last_tick = now;
     have_last = 1;
-    usb_app_midi_control_change(11, (uint8_t)(intensity >> 3));
+    /* The single bellows drives both keyboards, which play on separate MIDI
+     * channels (L_MIDI_CH / R_MIDI_CH), so send the expression CC on both. */
+    uint8_t value = (uint8_t)(intensity >> 3);
+    usb_app_midi_control_change(L_MIDI_CH, 11, value);
+    usb_app_midi_control_change(R_MIDI_CH, 11, value);
   }
 }
 

@@ -20,15 +20,15 @@ void usb_app_init(void);
  * Call from the main loop on every iteration. */
 void usb_app_task(void);
 
-/* Sends a short note on/off pair on MIDI channel 1, for end-to-end testing. */
+/* Sends a short note on/off pair on MIDI channel 0, for end-to-end testing. */
 void usb_app_midi_test_note(uint8_t note);
 
-/* Sends a Note On / Note Off on MIDI channel 1 (cable 0). */
-void usb_app_midi_note_on(uint8_t note, uint8_t velocity);
-void usb_app_midi_note_off(uint8_t note);
+/* Sends a Note On / Note Off on the given 0-based MIDI channel (cable 0). */
+void usb_app_midi_note_on(uint8_t channel, uint8_t note, uint8_t velocity);
+void usb_app_midi_note_off(uint8_t channel, uint8_t note);
 
-/* Sends a Control Change on MIDI channel 1 (cable 0). */
-void usb_app_midi_control_change(uint8_t controller, uint8_t value);
+/* Sends a Control Change on the given 0-based MIDI channel (cable 0). */
+void usb_app_midi_control_change(uint8_t channel, uint8_t controller, uint8_t value);
 
 #ifdef __cplusplus
 }

@@ -3,6 +3,13 @@
 
 #include <stdint.h>
 
+/* 0-based (on-wire) MIDI channels for the two keyboards: the left wing (SPI1)
+ * and the right (SPI2) play on separate channels so a host can route/voice them
+ * independently. The single bellows drives both, so its expression CC is sent
+ * on both (see bellow.c). */
+#define L_MIDI_CH 1
+#define R_MIDI_CH 2
+
 /* ===== Wing keyboard link (SPI slave) ===================================== *
  * Each wing streams a fixed SPI_LINK_FRAME_WORDS frame (see spi_link.h): word
  * 0 is the wing id, words 1.. are the raw hall measurement per key. SPI1 is

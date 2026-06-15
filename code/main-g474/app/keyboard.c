@@ -24,6 +24,7 @@ typedef struct
 {
   SPI_HandleTypeDef *hspi;
   const char *name;
+  uint8_t midi_ch;          /* 0-based MIDI channel this side's notes play on */
   GPIO_TypeDef *nss_port;   /* NSS line, read to find the inter-frame gap */
   uint16_t nss_pin;
 
@@ -155,7 +156,7 @@ static void bus_note_on(spi_bus_t *b, uint8_t wing_id, int k)
    * would be a NOTE OFF. */
   uint8_t velocity = (uint8_t)(1 + (uint32_t)bellow_intensity() * 126u / 1024u);
   printf("NOTE ON  %s wing=%u key=%2d note=%3u vel=%3u\r\n", b->name, wing_id, k, note, velocity);
-  usb_app_midi_note_on(note, velocity);
+  usb_app_midi_note_on(b->midi_ch, note, velocity);
 }
 
 /* Sends NOTE OFF for key k on wing_id if it is currently sounding. No-op
@@ -165,7 +166,7 @@ static void bus_note_off(spi_bus_t *b, uint8_t wing_id, int k)
 {
   if (b->sounding_note[k] == NOTE_NONE) return;
   printf("NOTE OFF %s wing=%u key=%2d note=%3u\r\n", b->name, wing_id, k, b->sounding_note[k]);
-  usb_app_midi_note_off(b->sounding_note[k]);
+  usb_app_midi_note_off(b->midi_ch, b->sounding_note[k]);
   b->sounding_note[k] = NOTE_NONE;
 }
 
@@ -323,9 +324,9 @@ static void bus_report(spi_bus_t *b)
 
 void keyboard_init(void)
 {
-  g_bus[0].hspi = &hspi1; g_bus[0].name = "SPI1/L";
+  g_bus[0].hspi = &hspi1; g_bus[0].name = "SPI1/L"; g_bus[0].midi_ch = L_MIDI_CH;
   g_bus[0].nss_port = L_SPI_NSS_GPIO_Port; g_bus[0].nss_pin = L_SPI_NSS_Pin;
-  g_bus[1].hspi = &hspi2; g_bus[1].name = "SPI2/R";
+  g_bus[1].hspi = &hspi2; g_bus[1].name = "SPI2/R"; g_bus[1].midi_ch = R_MIDI_CH;
   g_bus[1].nss_port = R_SPI_NSS_GPIO_Port; g_bus[1].nss_pin = R_SPI_NSS_Pin;
   for (int i = 0; i < 2; i++)
   {
@@ -350,6 +351,15 @@ void keyboard_poll(void)
   {
     last_bellows = bellows;
     keyboard_bellows_changed();
+    /* Reaching rest stops all sound: bus_bellows_changed() already sent NOTE
+     * OFF for every note we believe is sounding, but follow with an All Notes
+     * Off (CC 123) on each keyboard's channel once, so a host also clears any
+     * note we lost track of (e.g. a NOTE OFF dropped on the lossy SPI link). */
+    if (bellows == BELLOWS_NEUTRAL)
+    {
+      usb_app_midi_control_change(L_MIDI_CH, 123, 0);
+      usb_app_midi_control_change(R_MIDI_CH, 123, 0);
+    }
   }
 
   /* Rebase the dashboard rate snapshots when the report is (re-)enabled so the

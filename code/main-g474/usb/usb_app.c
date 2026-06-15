@@ -36,28 +36,28 @@ void usb_app_task(void)
 
 void usb_app_midi_test_note(uint8_t note)
 {
-  usb_app_midi_note_on(note, 100);
-  usb_app_midi_note_off(note);
+  usb_app_midi_note_on(0, note, 100);
+  usb_app_midi_note_off(0, note);
 }
 
-void usb_app_midi_note_on(uint8_t note, uint8_t velocity)
+void usb_app_midi_note_on(uint8_t channel, uint8_t note, uint8_t velocity)
 {
-  uint8_t const cable = 0, channel = 0;
-  uint8_t msg[3] = { 0x90 | channel, note, velocity };
+  uint8_t const cable = 0;
+  uint8_t msg[3] = { 0x90 | (channel & 0x0F), note, velocity };
   tud_midi_stream_write(cable, msg, 3);
 }
 
-void usb_app_midi_note_off(uint8_t note)
+void usb_app_midi_note_off(uint8_t channel, uint8_t note)
 {
-  uint8_t const cable = 0, channel = 0;
-  uint8_t msg[3] = { 0x80 | channel, note, 0 };
+  uint8_t const cable = 0;
+  uint8_t msg[3] = { 0x80 | (channel & 0x0F), note, 0 };
   tud_midi_stream_write(cable, msg, 3);
 }
 
-void usb_app_midi_control_change(uint8_t controller, uint8_t value)
+void usb_app_midi_control_change(uint8_t channel, uint8_t controller, uint8_t value)
 {
-  uint8_t const cable = 0, channel = 0;
-  uint8_t msg[3] = { 0xB0 | channel, controller, value };
+  uint8_t const cable = 0;
+  uint8_t msg[3] = { 0xB0 | (channel & 0x0F), controller, value };
   tud_midi_stream_write(cable, msg, 3);
 }
 
