@@ -205,7 +205,7 @@ static void bus_process_frame(spi_bus_t *b, const uint16_t *frame)
     if (!b->key_pressed[k] && v <= g_properties->key_press)
     {
       b->key_pressed[k] = 1;
-      if (key_is_mapped(wing_id, k))   /* no note on this wing -> noise */
+      // if (key_is_mapped(wing_id, k))   /* no note on this wing -> noise */
         printf("PRESS %u %d\r\n", wing_id, k);
       bus_note_on(b, wing_id, k);
     }

@@ -59,25 +59,25 @@ static const uint8_t note_table[3][2][NUM_KEYS] =
   {
     [BELLOWS_PULL] =
     {
-      /*  0 */ NOTE(D,2), NOTE_NONE, NOTE(B,2), NOTE_NONE, NOTE(G,4),
-      /*  5 */ NOTE_NONE, NOTE(A,4), NOTE_NONE, NOTE(E,2), NOTE(A,2),
-      /* 10 */ NOTE(Ds,4), NOTE(Fs,3), NOTE(D,3), NOTE(Gs,2), NOTE(E,3),
-      /* 15 */ NOTE(Gs,3), NOTE(B,3), NOTE(Ds,2), NOTE(G,3), NOTE(Cs,3),
+      /*  0 */ NOTE(D,2), NOTE_NONE, NOTE_NONE, NOTE_NONE, NOTE_NONE,
+      /*  5 */ NOTE_NONE, NOTE_NONE, NOTE_NONE, NOTE(E,2), NOTE(A,2),
+      /* 10 */ NOTE(B,2), NOTE(G,4), NOTE(D,3), NOTE(Gs,2), NOTE(E,3),
+      /* 15 */ NOTE(Gs,3), NOTE(B,3), NOTE(A,4), NOTE(G,3), NOTE(Cs,3),
       /* 20 */ NOTE(As,2), NOTE(C,4), NOTE(A,3), NOTE(Ds,3), NOTE(E,4),
-      /* 25 */ NOTE(C,2), NOTE(F,4), NOTE(As,3), NOTE(F,3), NOTE(Fs,4),
-      /* 30 */ NOTE(D,4), NOTE(C,3), NOTE_NONE, NOTE(F,2), NOTE(Cs,4),
-      /* 35 */ NOTE_NONE, NOTE(G,2), NOTE_NONE, NOTE(Gs,4), NOTE(Fs,2),
+      /* 25 */ NOTE(Ds,4), NOTE(F,4), NOTE(As,3), NOTE(F,3), NOTE(Fs,4),
+      /* 30 */ NOTE(D,4), NOTE(C,3), NOTE(Fs,3), NOTE(F,2), NOTE(Cs,4),
+      /* 35 */ NOTE(C,2), NOTE(G,2), NOTE(Ds,2), NOTE(Gs,4), NOTE(Fs,2),
     },
     [BELLOWS_PUSH] =
     {
-      /*  0 */ NOTE(E,2), NOTE_NONE, NOTE(E,3), NOTE_NONE, NOTE(Fs,4),
-      /*  5 */ NOTE_NONE, NOTE(Gs,4), NOTE_NONE, NOTE(D,2), NOTE(D,3),
-      /* 10 */ NOTE(B,4), NOTE(F,3), NOTE(G,2), NOTE(Gs,2), NOTE(A,2),
+      /*  0 */ NOTE(E,2), NOTE_NONE, NOTE_NONE, NOTE_NONE, NOTE_NONE,
+      /*  5 */ NOTE_NONE, NOTE_NONE, NOTE_NONE, NOTE(D,2), NOTE(D,3),
+      /* 10 */ NOTE(B,4), NOTE(Fs,4), NOTE(G,2), NOTE(Gs,2), NOTE(A,2),
       /* 15 */ NOTE(E,3), NOTE(A,3), NOTE(Cs,2), NOTE(As,3), NOTE(Ds,3),
       /* 20 */ NOTE(As,2), NOTE(B,3), NOTE(G,3), NOTE(C,4), NOTE(D,4),
       /* 25 */ NOTE(F,2), NOTE(Cs,3), NOTE(C,3), NOTE(Ds,4), NOTE(E,4),
-      /* 30 */ NOTE(Cs,4), NOTE(F,4), NOTE_NONE, NOTE(Fs,2), NOTE(Gs,3),
-      /* 35 */ NOTE_NONE, NOTE(Fs,3), NOTE_NONE, NOTE(G,4), NOTE(B,2),
+      /* 30 */ NOTE(Cs,4), NOTE(F,4), NOTE(F,3), NOTE(Fs,2), NOTE(Gs,3),
+      /* 35 */ NOTE(F,2), NOTE(Fs,3), NOTE(Cs,2), NOTE(G,4), NOTE(B,2),
     },
   },
 };
