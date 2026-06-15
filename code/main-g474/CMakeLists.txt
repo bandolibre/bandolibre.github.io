@@ -64,9 +64,14 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ../third_party/tinyusb/src/portable/st/stm32_fsdev/dcd_stm32_fsdev.c
 )
 
-# Force include our config.h for microrl.c (overrides third-party config.h)
+# Force include our config.h for every TU that sees microrl.h, so they all agree
+# on sizeof(microrl_t). microrl.h quote-includes the third-party config.h sitting
+# next to it; without this, console.c (which allocates microrl_t console_rl) would
+# size the struct from the upstream defaults while microrl.c sizes it from ours,
+# and microrl writing past console_rl's smaller allocation corrupts .bss.
 set_source_files_properties(
     ../third_party/microrl/src/microrl.c
+    ../common/console/console.c
     PROPERTIES
     COMPILE_FLAGS "-include${CMAKE_CURRENT_SOURCE_DIR}/../common/console/config.h"
 )
