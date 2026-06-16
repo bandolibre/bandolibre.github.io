@@ -5,6 +5,7 @@
 
 #include "main.h"
 #include "spi_link.h"
+#include "hall_report.h"
 #include "keyboard_layout.h"
 #include "bellow.h"
 #include "buttons.h"
@@ -16,6 +17,10 @@
 /* SPI handles for the two wing links, defined by the CubeMX-generated main.c. */
 extern SPI_HandleTypeDef hspi1;
 extern SPI_HandleTypeDef hspi2;
+
+/* The frame's per-key payload is exactly what the shared hall report renders. */
+_Static_assert(SPI_LINK_NUM_KEYS == HALL_REPORT_NUM_KEYS,
+               "SPI frame key count must match the shared hall report layout");
 
 /* Press/release hysteresis: a hall reading falls as a key is pressed and rises
  * back as it is released. key_release > key_press gives a dead band so a key
@@ -61,6 +66,11 @@ typedef struct
   uint8_t  key_min_init;
   uint8_t  key_pressed[SPI_LINK_NUM_KEYS];
   uint8_t  sounding_note[SPI_LINK_NUM_KEYS];
+
+  /* Last good frame's raw readings and their running statistics, for the
+   * show_keyboard live report (main-loop only). */
+  uint16_t    last_keys[SPI_LINK_NUM_KEYS];
+  hall_stats_t hall;
 
   /* Snapshots for the 1 Hz rate report and the throttled error log. */
   uint32_t last_good, last_misaligned, last_crc, last_bus;
@@ -218,6 +228,16 @@ static void bus_process_frame(spi_bus_t *b, const uint16_t *frame)
 
   if (wing_name(wing_id) == NULL) return; /* unknown wing -> nothing to decode */
 
+  /* Capture the raw readings only while this keyboard's live table is shown,
+   * and fold them into the stats only while its stat tables are shown, so a
+   * disabled (or partly disabled) dashboard adds no per-frame work. The bus's
+   * selector bit is its index in g_bus (bit 0 = left, bit 1 = right). */
+  uint16_t bit = 1u << (unsigned)(b - g_bus);
+  if (g_properties->show_keyboard & bit)
+    memcpy(b->last_keys, meas, sizeof(b->last_keys));
+  if (g_properties->show_keyboard & g_properties->show_keyboard_stats & bit)
+    hall_stats_update(&b->hall, meas);
+
   for (int k = 0; k < SPI_LINK_NUM_KEYS; k++)
   {
     uint16_t v = meas[k];
@@ -343,6 +363,33 @@ static void bus_report(spi_bus_t *b)
                        (unsigned long)rate, b->last_good_wing, (unsigned)b->last_bad_word0);
 }
 
+/* Renders one shared hall-report line as a dashboard row. The line already
+ * carries its own ANSI color escapes; "%s" keeps any stray '%' literal. */
+static void kbd_dash_emit(void *ctx, const char *line)
+{
+  (void)ctx;
+  console_dash_println("%s", line);
+}
+
+/* One keyboard's live hall table (and, with show_keyboard_stats, its
+ * min/max/diff/stddev tables), laid out exactly as the wing reports it: one row
+ * per ADC, columns 0..n left-to-right in SPI-frame order. */
+static void bus_report_keyboard(spi_bus_t *b, bool show_stats)
+{
+  const char *wname = wing_name(b->last_good_wing);
+  console_dash_println("%-6s keyboard (wing_id=%u %s)", b->name, b->last_good_wing,
+                       wname ? wname : "?");
+  hall_report_keys(b->last_keys, kbd_dash_emit, NULL);
+  if (show_stats)
+  {
+    hall_report_stats(&b->hall, b->name, kbd_dash_emit, NULL);
+    /* Start a fresh stddev window so the next report's stddev covers only the
+     * samples gathered since this one; min/max are kept since the report was
+     * enabled. */
+    hall_stats_reset_window(&b->hall);
+  }
+}
+
 void keyboard_init(void)
 {
   g_bus[0].hspi = &hspi1; g_bus[0].name = "SPI1/L"; g_bus[0].midi_ch = L_MIDI_CH;
@@ -353,6 +400,7 @@ void keyboard_init(void)
   {
     g_bus[i].rx_active = 0;
     g_bus[i].needs_resync = 1;   /* armed by bus_service_resync() on the idle gap */
+    hall_stats_init(&g_bus[i].hall);
   }
 }
 
@@ -393,6 +441,20 @@ void keyboard_poll(void)
   }
   show_was_on = g_properties->show_spi;
 
+  /* A keyboard accumulates stats only while both its show_keyboard and
+   * show_keyboard_stats bits are set (see bus_process_frame), so all the stats
+   * bookkeeping below is keyed off the same mask and is skipped entirely when
+   * no keyboard's stats are on. */
+  uint16_t stats_mask = g_properties->show_keyboard & g_properties->show_keyboard_stats;
+
+  /* Seed a keyboard's stats when its stat report is (re-)enabled, so it starts
+   * a fresh min/max/window rather than showing data left from a previous run. */
+  static uint16_t stats_was_on;
+  for (int i = 0; i < 2; i++)
+    if ((stats_mask & (1u << i)) && !(stats_was_on & (1u << i)))
+      hall_stats_init(&g_bus[i].hall);
+  stats_was_on = stats_mask;
+
   for (int i = 0; i < 2; i++)
   {
     bus_poll(&g_bus[i]);
@@ -400,6 +462,16 @@ void keyboard_poll(void)
     bus_log_errors(&g_bus[i]);
     if (g_report_due && g_properties->show_spi) bus_report(&g_bus[i]);
   }
+
+  /* show_keyboard and show_keyboard_stats are both bus selectors: bit 0 = left
+   * (SPI1), bit 1 = right (SPI2), so 1=left, 2=right, 3=both. Selecting one
+   * keyboard at a time (and stats only where wanted) keeps the tall report from
+   * overflowing the terminal. Stats are shown only for a keyboard that is also
+   * being reported. */
+  if (g_report_due)
+    for (int i = 0; i < 2; i++)
+      if (g_properties->show_keyboard & (1u << i))
+        bus_report_keyboard(&g_bus[i], g_properties->show_keyboard_stats & (1u << i));
 }
 
 void keyboard_print_rates(uint32_t dt_ms)

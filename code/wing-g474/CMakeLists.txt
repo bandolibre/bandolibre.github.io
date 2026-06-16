@@ -47,6 +47,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
     ../third_party/microrl/src/microrl.c
     ../common/console/console.c
+    ../common/hall_report/hall_report.c
 )
 
 # Force include our config.h for microrl.c (overrides third-party config.h)
@@ -61,6 +62,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
     ../third_party/microrl/src
     ../common/console
+    ../common/hall_report
 )
 
 # Add project symbols (macros)

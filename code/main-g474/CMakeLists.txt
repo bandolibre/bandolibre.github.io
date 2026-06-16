@@ -55,6 +55,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     properties/properties_console.c
     ../third_party/microrl/src/microrl.c
     ../common/console/console.c
+    ../common/hall_report/hall_report.c
     usb/usb_descriptors.c
     usb/usb_app.c
     # TinyUSB device stack with MIDI on the STM32 fsdev port
@@ -88,6 +89,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ../third_party/microrl/src
     ../common/console
     ../common/spi_link
+    ../common/hall_report
     usb
     ../third_party/tinyusb/src
 )

@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "console.h"
+#include "hall_report.h"
+#include "ansi.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -92,16 +94,17 @@ static uint8_t read_wing_id(void);
 // Number of hall sensor slots == number of physical keys on this wing.
 #define KEYBOARD_NUM_KEYS (HALL_NUM_ADC * HALL_SLOTS_PER_ADC)
 
-// Layout matches the per-ADC DMA buffer: [adc][sel*HALL_NUM_RANK + rank].
+// Layout matches the per-ADC DMA buffer: [adc][sel*HALL_NUM_RANK + rank]. This
+// is also exactly the flattened key order the SPI frame and hall_report use
+// (index = adc * HALL_SLOTS_PER_ADC + slot), so g_hall_data can be passed to
+// the shared report as a flat uint16_t[KEYBOARD_NUM_KEYS].
+_Static_assert(KEYBOARD_NUM_KEYS == HALL_REPORT_NUM_KEYS,
+               "wing key count must match the shared hall report layout");
 static uint16_t g_hall_data[HALL_NUM_ADC][HALL_SLOTS_PER_ADC];
 static uint16_t g_hall_last_reported[HALL_NUM_ADC][HALL_SLOTS_PER_ADC];
 
-// Running per-slot statistics since boot, fed by report_hall_stats().
-static uint16_t g_hall_min[HALL_NUM_ADC][HALL_SLOTS_PER_ADC];
-static uint16_t g_hall_max[HALL_NUM_ADC][HALL_SLOTS_PER_ADC];
-static uint64_t g_hall_sum[HALL_NUM_ADC][HALL_SLOTS_PER_ADC];
-static uint64_t g_hall_sumsq[HALL_NUM_ADC][HALL_SLOTS_PER_ADC];
-static uint32_t g_hall_stat_count;
+// Running per-key statistics, fed by hall_stats_update() every sweep.
+static hall_stats_t g_hall_stats;
 
 
 // The .ioc only sets the board layer (pins -> analog, DMA1_Ch1..5 -> ADC1..5,
@@ -177,48 +180,9 @@ static void hall_keyboard_scan(uint16_t hall_data[HALL_NUM_ADC][HALL_SLOTS_PER_A
   // so no de-interleave step is needed.
 }
 
-// Set once min/max have been seeded; unlike g_hall_stat_count, this is not
-// reset by reset_hall_stddev_stats() so min/max remain since-boot.
-static int g_hall_minmax_initialized;
-
-// Updates the running min/max/sum/sumsq stats with one sweep's readings.
-static void report_hall_stats(uint16_t hall_data[HALL_NUM_ADC][HALL_SLOTS_PER_ADC])
-{
-  int first = !g_hall_minmax_initialized;
-  g_hall_minmax_initialized = 1;
-  g_hall_stat_count++;
-  for (int a = 0; a < HALL_NUM_ADC; a++)
-    for (int s = 0; s < HALL_SLOTS_PER_ADC; s++)
-    {
-      uint16_t v = hall_data[a][s];
-      if (first || v < g_hall_min[a][s]) g_hall_min[a][s] = v;
-      if (first || v > g_hall_max[a][s]) g_hall_max[a][s] = v;
-      g_hall_sum[a][s]   += v;
-      g_hall_sumsq[a][s] += (uint64_t)v * v;
-    }
-}
-
-// Resets the sum/sumsq/count accumulators every STATS_RESET_PERIOD_MS so
-// stddev reflects only the last reset window; min/max are left untouched.
+// Resets the stddev window every STATS_RESET_PERIOD_MS so stddev reflects only
+// the last window; min/max are left untouched (see hall_stats_reset_window).
 #define STATS_RESET_PERIOD_MS 3000
-static void reset_hall_stddev_stats(void)
-{
-  memset(g_hall_sum, 0, sizeof(g_hall_sum));
-  memset(g_hall_sumsq, 0, sizeof(g_hall_sumsq));
-  g_hall_stat_count = 0;
-}
-
-// Integer square root (floor), via Newton's method.
-static uint32_t isqrt32(uint32_t x)
-{
-  if (x == 0) return 0;
-  uint32_t r = x, r_prev;
-  do {
-    r_prev = r;
-    r = (r + x / r) / 2;
-  } while (r < r_prev);
-  return r_prev;
-}
 
 // Reports hall_data slots that moved by at least HALL_DEAD_ZONE since the
 // last report.
@@ -322,123 +286,13 @@ static volatile int g_show_keys = 0;
 // below the live readings while g_show_keys is also set.
 static volatile int g_show_stats = 0;
 
-// Background color for one hall reading: no background at/above
-// HALL_COLOR_HIGH, fading from blue (at HALL_COLOR_HIGH) to orange (at/below
-// HALL_COLOR_LOW), and dark grey text with no background below HALL_COLOR_MIN.
-#define HALL_COLOR_HIGH 2040
-#define HALL_COLOR_LOW  1500
-#define HALL_COLOR_MIN  100
-static void print_hall_cell(uint16_t val)
+// Emits one shared-report line as a console row: print it, clear to end of line
+// (so a shorter row doesn't leave stale characters from the previous frame) and
+// advance to the next line.
+static void hall_report_emit(void *ctx, const char *line)
 {
-  if ((int)val < HALL_COLOR_MIN)
-  {
-    printf("\033[90m %6u\033[0m", (unsigned)val);
-    return;
-  }
-
-  if ((int)val >= HALL_COLOR_HIGH)
-  {
-    printf(" %6u", (unsigned)val);
-    return;
-  }
-
-  int span = HALL_COLOR_HIGH - HALL_COLOR_LOW;
-  int t = HALL_COLOR_HIGH - (int)val;
-  if (t > span) t = span;
-
-  int r = 255 * t / span;
-  int g = 165 * t / span;
-  int b = 255 - 255 * t / span;
-  printf("\033[48;2;%d;%d;%dm %6u\033[0m", r, g, b, (unsigned)val);
-}
-
-static void print_hall_header(void)
-{
-  printf("     ");
-  for (int sel = 0; sel < HALL_NUM_SEL; sel++)
-    for (int rank = 0; rank < HALL_NUM_RANK; rank++)
-      printf(" sel%d.%d", sel, rank);
-  printf("\033[K\r\n");
-}
-
-// Peak background intensity (0-255) for the statistic-table gradient; kept
-// low so the cells stay dark.
-#define HALL_STAT_COLOR_MAX 100
-
-// Background color for one statistic-table cell, relative to the table's own
-// [lo, hi] range (which excludes zero cells): green near lo, red near hi,
-// black in the middle third of the range. Zero cells are always dark grey
-// with no background, regardless of range.
-static void print_hall_stat_cell(uint16_t val, uint16_t lo, uint16_t hi)
-{
-  if (val == 0)
-  {
-    printf("\033[90m %6u\033[0m", (unsigned)val);
-    return;
-  }
-
-  int range = (int)hi - (int)lo;
-  if (range <= 0)
-  {
-    printf("\033[48;2;0;0;0m %6u\033[0m", (unsigned)val);
-    return;
-  }
-
-  int pos = (int)val - (int)lo;
-  int third = range / 3;
-
-  if (pos > third && pos < range - third)
-  {
-    printf("\033[48;2;0;0;0m %6u\033[0m", (unsigned)val);
-    return;
-  }
-
-  if (pos <= third)
-  {
-    int denom = third > 0 ? third : range;
-    int t = denom - pos;
-    if (t > denom) t = denom;
-    int g = HALL_STAT_COLOR_MAX * t / denom;
-    printf("\033[48;2;0;%d;0m %6u\033[0m", g, (unsigned)val);
-  }
-  else
-  {
-    int denom = third > 0 ? third : range;
-    int t = pos - (range - denom);
-    if (t > denom) t = denom;
-    int r = HALL_STAT_COLOR_MAX * t / denom;
-    printf("\033[48;2;%d;0;0m %6u\033[0m", r, (unsigned)val);
-  }
-}
-
-// Prints a labelled table of values color-coded relative to the table's own
-// min/max range, e.g. for the min/max/diff/stddev statistics tables. Zero
-// cells are excluded from the range computation (and shown in dark grey).
-// Followed by a blank separator line. "suffix" (may be NULL) is appended to
-// the title, e.g. to report the stddev sample count.
-static void print_hall_value_table(const char *label, uint16_t arr[HALL_NUM_ADC][HALL_SLOTS_PER_ADC], const char *suffix)
-{
-  uint16_t lo = 0, hi = 0;
-  int have_range = 0;
-  for (int a = 0; a < HALL_NUM_ADC; a++)
-    for (int s = 0; s < HALL_SLOTS_PER_ADC; s++)
-    {
-      if (arr[a][s] == 0) continue;
-      if (!have_range || arr[a][s] < lo) lo = arr[a][s];
-      if (!have_range || arr[a][s] > hi) hi = arr[a][s];
-      have_range = 1;
-    }
-
-  printf("----- %s (from %u to %u)%s -----\033[K\r\n", label, (unsigned)lo, (unsigned)hi, suffix ? suffix : "");
-  print_hall_header();
-  for (int a = 0; a < HALL_NUM_ADC; a++)
-  {
-    printf("adc%d ", a);
-    for (int s = 0; s < HALL_SLOTS_PER_ADC; s++)
-      print_hall_stat_cell(arr[a][s], lo, hi);
-    printf("\033[K\r\n");
-  }
-  printf("\033[K\r\n");
+  (void)ctx;
+  printf("%s" ANSI_CLEAR_LINE_END "\r\n", line);
 }
 
 static void print_hall_table(uint16_t hall_data[HALL_NUM_ADC][HALL_SLOTS_PER_ADC], uint32_t scan_freq_hz)
@@ -447,46 +301,14 @@ static void print_hall_table(uint16_t hall_data[HALL_NUM_ADC][HALL_SLOTS_PER_ADC
   // table in place at the top of the screen (avoids it visibly jumping
   // through the table), then restore position and visibility so the prompt
   // and any partially-typed command are undisturbed.
-  printf("\0337\033[?25l\033[H");
-  printf("scan freq   : %6lu Hz\033[K\r\n", (unsigned long)scan_freq_hz);
-  print_hall_header();
+  printf(ANSI_CURSOR_SAVE ANSI_CURSOR_HIDE ANSI_CURSOR_HOME);
+  printf("scan freq   : %6lu Hz" ANSI_CLEAR_LINE_END "\r\n", (unsigned long)scan_freq_hz);
 
-  for (int a = 0; a < HALL_NUM_ADC; a++)
-  {
-    printf("adc%d ", a);
-    for (int s = 0; s < HALL_SLOTS_PER_ADC; s++)
-      print_hall_cell(hall_data[a][s]);
-    printf("\033[K\r\n");
-  }
-
+  hall_report_keys((const uint16_t *)hall_data, hall_report_emit, NULL);
   if (g_show_stats)
-  {
-    printf("\033[K\r\n");
-    print_hall_value_table("min", g_hall_min, NULL);
-    print_hall_value_table("max", g_hall_max, NULL);
+    hall_report_stats(&g_hall_stats, NULL, hall_report_emit, NULL);
 
-    uint16_t diff[HALL_NUM_ADC][HALL_SLOTS_PER_ADC];
-    for (int a = 0; a < HALL_NUM_ADC; a++)
-      for (int s = 0; s < HALL_SLOTS_PER_ADC; s++)
-        diff[a][s] = g_hall_max[a][s] - g_hall_min[a][s];
-    print_hall_value_table("diff", diff, NULL);
-
-    uint16_t stddev[HALL_NUM_ADC][HALL_SLOTS_PER_ADC];
-    uint32_t count = g_hall_stat_count ? g_hall_stat_count : 1;
-    for (int a = 0; a < HALL_NUM_ADC; a++)
-      for (int s = 0; s < HALL_SLOTS_PER_ADC; s++)
-      {
-        uint32_t mean    = (uint32_t)(g_hall_sum[a][s]   / count);
-        uint32_t mean_sq = (uint32_t)(g_hall_sumsq[a][s] / count);
-        uint32_t var = (mean_sq > mean * mean) ? mean_sq - mean * mean : 0;
-        stddev[a][s] = (uint16_t)isqrt32(var);
-      }
-    char stddev_suffix[24];
-    snprintf(stddev_suffix, sizeof(stddev_suffix), ", %lu samples", (unsigned long)g_hall_stat_count);
-    print_hall_value_table("stddev", stddev, stddev_suffix);
-  }
-
-  printf("\0338\033[?25h");
+  printf(ANSI_CURSOR_RESTORE ANSI_CURSOR_SHOW);
 }
 
 static void blink_tick(void)
@@ -614,7 +436,7 @@ int main(void)
     blink_tick();
 
     hall_keyboard_scan(g_hall_data);
-    report_hall_stats(g_hall_data);
+    hall_stats_update(&g_hall_stats, (const uint16_t *)g_hall_data);
     keyboard_process(g_hall_data);
 
     poll_count++;
@@ -623,7 +445,7 @@ int main(void)
 
     if (now - last_stats_reset_tick >= STATS_RESET_PERIOD_MS)
     {
-      reset_hall_stddev_stats();
+      hall_stats_reset_window(&g_hall_stats);
       last_stats_reset_tick = now;
     }
 

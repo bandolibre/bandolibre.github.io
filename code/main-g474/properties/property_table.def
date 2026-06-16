@@ -119,3 +119,9 @@ PROPERTY(PROPERTY_TAG_NONE, bool, show_bellow,
 PROPERTY(PROPERTY_TAG_NONE, bool, show_spi,
          .default_value = 0,
          .description = "Live-report the per-wing SPI link reception counters and rates")
+PROPERTY(PROPERTY_TAG_NONE, uint16_t, show_keyboard,
+         .default_value = 0, .min = 0, .max = 3,
+         .description = "Live-report wing keyboards: 0 off, 1 left, 2 right, 3 both")
+PROPERTY(PROPERTY_TAG_NONE, uint16_t, show_keyboard_stats,
+         .default_value = 0, .min = 0, .max = 3,
+         .description = "Add min/max/diff/stddev tables: 0 off, 1 left, 2 right, 3 both")

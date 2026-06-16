@@ -9,7 +9,8 @@ bool g_report_due = false;
 /* True when any show_* report is enabled (the dashboard should be on screen). */
 static bool report_active(void)
 {
-  return g_properties->show_bellow || g_properties->show_spi;
+  return g_properties->show_bellow || g_properties->show_spi ||
+         g_properties->show_keyboard;
 }
 
 /* True at most once per refresh period (1000 / report_hz ms) and only while
