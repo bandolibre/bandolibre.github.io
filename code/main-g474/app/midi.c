@@ -86,7 +86,7 @@ bool midi_console_execute(int argc, const char *const *argv)
 
 void midi_console_help(void)
 {
-  printf("MIDI commands (cable 0, channel 1-16, data 0-127):\r\n");
+  printf("\r\nMIDI commands (cable 0, channel 1-16, data 0-127):\r\n");
   printf("  send_note_on  <channel> <note> [velocity]   velocity defaults to %d\r\n", MIDI_DEFAULT_VELOCITY);
   printf("  send_note_off <channel> <note>\r\n");
   printf("  send_cc       <channel> <controller> <value>\r\n");

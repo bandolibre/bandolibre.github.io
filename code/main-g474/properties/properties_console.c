@@ -1,5 +1,6 @@
 #include "properties_console.h"
 #include "properties.h"
+#include "ansi.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -158,11 +159,12 @@ void properties_help(void)
   printf("  reset <name>         restore default(s) (name may glob, e.g. reset *)\r\n");
   printf("  help                 this help\r\n");
   printf("\r\nProperties:\r\n");
-  printf("%-18s %5s %6s %6s  %s\r\n", "name", "type", "min", "max", "description");
+  printf("%-28s %5s %6s %6s  %s\r\n", "name", "type", "min", "max", "description");
   for (size_t i = 0; i < property_count(); i++)
   {
     const property_desc_t *d = property_at(i);
-    printf("%-18s %5s %6u %6u  %s\r\n", d->name, type_name(d->type), d->min, d->max, d->description);
+    const char *bg = (i & 1) ? ANSI_BG_GREY236 : "";
+    printf("%s%-28s %5s %6u %6u  %s" ANSI_RESET "\r\n", bg, d->name, type_name(d->type), d->min, d->max, d->description);
   }
 }
 

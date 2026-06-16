@@ -9,9 +9,11 @@
 #ifndef _MICRORL_CONFIG_H_
 #define _MICRORL_CONFIG_H_
 
+#include "ansi.h"
+
 #define _COMMAND_LINE_LEN (1+100)
 #define _COMMAND_TOKEN_NMB 8
-#define _PROMPT_DEFAULT "\033[32mIRin >\033[0m "
+#define _PROMPT_DEFAULT ANSI_FG_GREEN "IRin >" ANSI_RESET " "
 #define _PROMPT_LEN 7
 #define _USE_COMPLETE
 #define _USE_HISTORY

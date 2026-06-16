@@ -1,4 +1,5 @@
 #include "console.h"
+#include "ansi.h"
 #include <stdarg.h>
 #include <stdio.h>
 
@@ -23,7 +24,7 @@ int _write(int fd, char *buf, int len)
    * reprinted by console_redraw_prompt() at the bottom of the main loop. */
   if (console_internal_depth == 0 && !console_dirty)
   {
-    HAL_UART_Transmit(console_uart, (uint8_t *)"\r\033[K", 4, HAL_MAX_DELAY);
+    HAL_UART_Transmit(console_uart, (uint8_t *)("\r" ANSI_CLEAR_LINE_END), 4, HAL_MAX_DELAY);
   }
   HAL_UART_Transmit(console_uart, (uint8_t *)buf, len, HAL_MAX_DELAY);
   if (console_internal_depth == 0) console_dirty = 1;
@@ -64,14 +65,14 @@ void console_redraw_prompt(void)
 {
   /* Cursor is at column 0 of a fresh line (async prints end with \r\n). */
   console_internal_depth++;
-  printf("\033[K");                      /* clear to end of line */
+  printf(ANSI_CLEAR_LINE_END);           /* clear to end of line */
   console_print(console_rl.prompt_str);  /* colored prompt */
   for (int i = 0; i < console_rl.cmdlen; i++) {
     char c = console_rl.cmdline[i] ? console_rl.cmdline[i] : ' ';
     putchar(c);
   }
   int back = console_rl.cmdlen - console_rl.cursor;
-  if (back > 0) printf("\033[%dD", back);  /* restore cursor position */
+  if (back > 0) printf(ANSI_CURSOR_LEFT_FMT, back);  /* restore cursor position */
   fflush(stdout);
   console_internal_depth--;
 }
@@ -93,10 +94,10 @@ static int dash_rows;  /* height of the dashboard / reserved band; 0 = no dashbo
 static void console_dash_set_region(int R)
 {
   console_internal_depth++;
-  if (R > 0) printf("\033[%d;r", R + 1);   /* region = rows R+1..bottom */
-  else       printf("\033[r");             /* full-screen scrolling */
-  for (int i = 1; i <= R; i++) printf("\033[%d;1H\033[K", i);  /* clear the band */
-  printf("\033[999;1H");                   /* park at the bottom row */
+  if (R > 0) printf(ANSI_SCROLL_TOP_FMT, R + 1);   /* region = rows R+1..bottom */
+  else       printf(ANSI_SCROLL_FULL);             /* full-screen scrolling */
+  for (int i = 1; i <= R; i++) printf(ANSI_CURSOR_ROW_FMT ANSI_CLEAR_LINE_END, i);  /* clear the band */
+  printf(ANSI_CURSOR_BOTTOM);              /* park at the bottom row */
   console_internal_depth--;
   console_redraw_prompt();                 /* prompt back in the scroll region */
 }
@@ -107,19 +108,19 @@ void console_dash_begin(void)
   /* Hide the cursor and save its prompt position: the frame moves the cursor all
    * over the dashboard while drawing, which would otherwise be visible as a blink
    * up in the report band. It is revealed again at the prompt by console_dash_end. */
-  printf("\033[?25l\033[s");
+  printf(ANSI_CURSOR_HIDE ANSI_CURSOR_SAVE);
   fflush(stdout);
   dash_row = 1;
 }
 
 void console_dash_println(const char *fmt, ...)
 {
-  printf("\033[%d;1H", dash_row);   /* absolute: ignores the scroll margins */
+  printf(ANSI_CURSOR_ROW_FMT, dash_row);   /* absolute: ignores the scroll margins */
   va_list ap;
   va_start(ap, fmt);
   vprintf(fmt, ap);
   va_end(ap);
-  printf("\033[K");                 /* clear to end of line, no full clear */
+  printf(ANSI_CLEAR_LINE_END);      /* clear to end of line, no full clear */
   dash_row++;
 }
 
@@ -129,14 +130,14 @@ void console_dash_end(unsigned hz)
                        "------------------------------------------", hz);
   int used = dash_row - 1;
   /* Wipe rows a previous, taller frame left behind. */
-  for (int i = dash_row; i <= dash_rows; i++) printf("\033[%d;1H\033[K", i);
-  printf("\033[u");        /* restore cursor to the prompt */
+  for (int i = dash_row; i <= dash_rows; i++) printf(ANSI_CURSOR_ROW_FMT ANSI_CLEAR_LINE_END, i);
+  printf(ANSI_CURSOR_RESTORE);        /* restore cursor to the prompt */
   if (used != dash_rows)
   {
     dash_rows = used;
     console_dash_set_region(used);   /* self-guarded; also leaves cursor at the prompt */
   }
-  printf("\033[?25h");     /* reveal the cursor, now back at the prompt */
+  printf(ANSI_CURSOR_SHOW);     /* reveal the cursor, now back at the prompt */
   fflush(stdout);
   console_internal_depth--;
 }
