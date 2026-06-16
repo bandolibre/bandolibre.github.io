@@ -46,6 +46,7 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
     app/bellow.c
+    app/buttons.c
     app/keyboard.c
     app/midi.c
     app/pedals.c
