@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdio.h>
 
+#include "buttons.h"
 #include "console.h"
 #include "keyboard.h"   /* L_MIDI_CH / R_MIDI_CH */
 #include "main.h"
@@ -38,6 +39,20 @@ bellows_t bellow_direction(void)
 uint16_t bellow_intensity(void)
 {
   return g_bellow_intensity;
+}
+
+/* Bellows sensitivity multiplier (Q8, 256 = x1.0) for the level FN1 currently
+ * selects: level 0 is unity, levels 1 and 2 use the bellow_scale_mid/high
+ * properties. Applied to the intensity, so it scales both note velocity and
+ * CC#11; also reused for the table-mode velocity. */
+uint16_t bellow_sens_scale_q8(void)
+{
+  switch (buttons_bellow_sens_level())
+  {
+    case 1:  return g_properties->bellow_scale_mid;
+    case 2:  return g_properties->bellow_scale_high;
+    default: return 256;
+  }
 }
 
 /* Updates direction/intensity from the combined hall reading (see bellow_poll). */
@@ -78,6 +93,12 @@ static void bellow_update(uint32_t hall_total)
   {
     g_bellow_intensity = 0;
   }
+
+  /* Scale by the selected sensitivity level (Q8, >>8 to divide), clamping back
+   * into 0..1024 so a higher scale reaches full intensity (and thus full
+   * velocity/CC) sooner. */
+  uint32_t scaled = ((uint32_t)g_bellow_intensity * bellow_sens_scale_q8()) >> 8;
+  g_bellow_intensity = (uint16_t)(scaled > 1024 ? 1024 : scaled);
 }
 
 /* CC#11 (Expression) hysteresis, in the same 0..1024 units as the intensity:

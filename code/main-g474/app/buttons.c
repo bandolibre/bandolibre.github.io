@@ -7,9 +7,21 @@
 /* Latched by buttons_poll() on each FN0 press; read via buttons_table_mode(). */
 static bool table_mode = false;
 
+/* Number of bellows sensitivity levels FN1 cycles through. */
+#define BELLOW_SENS_LEVELS 3
+
+/* Current bellows sensitivity level (0..BELLOW_SENS_LEVELS-1), advanced by each
+ * FN1 press; read via buttons_bellow_sens_level(). */
+static uint8_t bellow_sens_level = 0;
+
 bool buttons_table_mode(void)
 {
   return table_mode;
+}
+
+uint8_t buttons_bellow_sens_level(void)
+{
+  return bellow_sens_level;
 }
 
 void buttons_poll(void)
@@ -26,16 +38,18 @@ void buttons_poll(void)
   if (HAL_GPIO_ReadPin(SW_FN1_GPIO_Port,       SW_FN1_Pin)        == GPIO_PIN_RESET) fn |= 2;
   if (HAL_GPIO_ReadPin(SW_FN2_GPIO_Port,       SW_FN2_Pin)        == GPIO_PIN_RESET) fn |= 4;
 
-  /* Toggle table mode on the rising edge of FN0 (press, not release). */
+  /* Act on rising edges (press, not release). FN0 toggles table mode; FN1
+   * advances the bellows sensitivity level, wrapping after the last. */
   if ((fn & 1) && !(fn_prev & 1)) table_mode = !table_mode;
+  if ((fn & 2) && !(fn_prev & 2)) bellow_sens_level = (bellow_sens_level + 1) % BELLOW_SENS_LEVELS;
 
   if (fn != fn_prev)
   {
     fn_prev = fn;
-    printf("FN: %c%c%c  table_mode=%u\r\n",
+    printf("FN: %c%c%c  table_mode=%u  bellow_sens_level=%u\r\n",
            (fn & 1) ? '1' : '0',
            (fn & 2) ? '1' : '0',
            (fn & 4) ? '1' : '0',
-           table_mode);
+           table_mode, bellow_sens_level);
   }
 }

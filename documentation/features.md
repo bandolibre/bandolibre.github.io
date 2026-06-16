@@ -9,6 +9,40 @@ Settings:
 - `midi_active_sensing_enable` — send the heartbeat (default on).
 - `midi_active_sensing_period` — milliseconds between bytes (default 200).
 
+## Table mode
+
+The **left function button (FN0)** toggles table mode on and off; the current
+state is reported on the console.
+
+Normally a note only sounds while the bellows is moving, and its pitch and
+velocity follow the bellows direction and intensity. Table mode lets the
+instrument be played flat on a table with the bellows at rest: each key press
+sounds immediately, the bellows is treated as always **pulled** (so every key
+plays its pull note), and notes use a fixed velocity of 80. This makes it
+practical to type a score into a DAW or notation software one note at a time,
+without having to work the bellows.
+
+Toggling table mode off re-evaluates the keys currently held so sounding notes
+follow the real bellows again.
+
+## Bellows sensitivity
+
+The **middle function button (FN1)** cycles bellows sensitivity through three
+levels, wrapping back to the first; the current level is reported on the
+console. Each level scales the bellows signal (the 0..1024 intensity that drives
+both note velocity and the expression CC), so a higher level reaches full
+velocity and full expression with less bellows travel — useful for quiet playing
+or a stiff bellows.
+
+Level 1 is unity (no scaling). Levels 2 and 3 multiply by `bellow_scale_mid`
+(default x1.5) and `bellow_scale_high` (default x2.0); both are stored as a /256
+fixed point value (256 = x1.0), so 384 and 512. The scaled intensity is clamped
+to its full range, so beyond the point that reaches maximum the signal simply
+saturates.
+
+The same multiplier scales the table-mode velocity, so switching sensitivity
+levels also raises or lowers how hard table-mode notes play.
+
 ## Pedals
 
 Two pedal inputs, each accepting an expression pedal wired like the M-Audio

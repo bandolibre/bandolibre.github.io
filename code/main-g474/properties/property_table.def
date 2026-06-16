@@ -95,6 +95,12 @@ PROPERTY(24, uint16_t, pedal2_cc_period_ms,
 PROPERTY(25, uint16_t, tablemode_velocity,
          .default_value = 80, .min = 1, .max = 127,
          .description = "Note velocity used in table mode (bellows at rest)")
+PROPERTY(26, uint16_t, bellow_scale_mid,
+         .default_value = 384, .min = 256, .max = 1024,
+         .description = "Bellows sensitivity scale at level 2, /256 (256 = unity)")
+PROPERTY(27, uint16_t, bellow_scale_high,
+         .default_value = 512, .min = 256, .max = 1024,
+         .description = "Bellows sensitivity scale at level 3, /256 (256 = unity)")
 PROPERTY(PROPERTY_TAG_NONE, bool, log_bellow,
          .default_value = 0,
          .description = "Log hall readings and bellows direction each poll")

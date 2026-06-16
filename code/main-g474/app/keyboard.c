@@ -161,13 +161,21 @@ static void bus_note_on(spi_bus_t *b, uint8_t wing_id, int k)
   uint8_t note = note_table[wing_id][dir][k];
   if (note == NOTE_NONE) return;
   b->sounding_note[k] = note;
-  /* In table mode the bellows isn't moving, so use a fixed default; otherwise
-   * derive velocity from how hard the bellows is moving (0..1024 -> 1..127),
-   * floored at 1 so a note triggered just past the neutral deadzone is still
-   * audible (0 would be a NOTE OFF). */
-  uint8_t velocity = buttons_table_mode()
-                       ? (uint8_t)g_properties->tablemode_velocity
-                       : (uint8_t)(1 + (uint32_t)bellow_intensity() * 126u / 1024u);
+  /* In table mode the bellows isn't moving, so start from a fixed default and
+   * scale it by the FN1 sensitivity multiplier (Q8, >>8 to divide), clamped to
+   * the MIDI range; otherwise derive velocity from how hard the bellows is
+   * moving (0..1024 -> 1..127), floored at 1 so a note triggered just past the
+   * neutral deadzone is still audible (0 would be a NOTE OFF). */
+  uint8_t velocity;
+  if (buttons_table_mode())
+  {
+    uint32_t v = ((uint32_t)g_properties->tablemode_velocity * bellow_sens_scale_q8()) >> 8;
+    velocity = (uint8_t)(v > 127 ? 127 : v);
+  }
+  else
+  {
+    velocity = (uint8_t)(1 + (uint32_t)bellow_intensity() * 126u / 1024u);
+  }
   printf("NOTE ON  %s wing=%u key=%2d note=%3u vel=%3u\r\n", b->name, wing_id, k, note, velocity);
   usb_app_midi_note_on(b->midi_ch, note, velocity);
 }

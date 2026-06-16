@@ -18,6 +18,11 @@ bellows_t bellow_direction(void);
  * to set note-on velocity. */
 uint16_t bellow_intensity(void);
 
+/* Sensitivity multiplier for the level FN1 currently selects, as a Q8 fixed
+ * point value (256 = x1.0). Already applied to bellow_intensity(); also used to
+ * scale the table-mode velocity, so the FN1 levels behave the same there. */
+uint16_t bellow_sens_scale_q8(void);
+
 /* Samples both hall sensors, updates the direction/intensity, and emits the
  * expression CC. Call once per main loop iteration. Read the result via
  * bellow_direction(); consumers track changes themselves. */
