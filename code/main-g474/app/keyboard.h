@@ -7,8 +7,8 @@
  * and the right (SPI2) play on separate channels so a host can route/voice them
  * independently. The single bellows drives both, so its expression CC is sent
  * on both (see bellow.c). */
-#define L_MIDI_CH 1
-#define R_MIDI_CH 2
+#define L_MIDI_CH 0
+#define R_MIDI_CH 1
 
 /* ===== Wing keyboard link (SPI slave) ===================================== *
  * Each wing streams a fixed SPI_LINK_FRAME_WORDS frame (see spi_link.h): word
