@@ -17,8 +17,7 @@ extern "C" {
  * peripheral clock (48 MHz from PLLQ) is already configured. */
 void usb_app_init(void);
 
-/* True once the host has enumerated and configured the device. The link is
- * always full-speed (12 Mbit/s) by hardware config; this reflects whether a
+/* True once the host has enumerated and configured the device, i.e. whether a
  * host is actually attached and has mounted us. */
 bool usb_app_mounted(void);
 

@@ -105,8 +105,7 @@ static void swo_print(const char *s)
 /* One-time boot summary: bus clocks, USB link, and RAM headroom. Static RAM
  * usage is fixed at link time; the heap budget is the gap between _end and the
  * MSP stack reservation below _estack (the layout _sbrk in sysmem.c relies on).
- * USB is full-speed (12 Mbit/s) by hardware config; the host has usually not
- * enumerated us yet this early in boot. */
+ * The host has usually not enumerated us yet this early in boot. */
 static void print_startup_info(void)
 {
   extern uint8_t _end;             /* first heap byte (end of .bss) */
@@ -125,7 +124,8 @@ static void print_startup_info(void)
          (unsigned long)(HAL_RCC_GetHCLKFreq() / 1000000UL),
          (unsigned long)(HAL_RCC_GetPCLK1Freq() / 1000000UL),
          (unsigned long)(HAL_RCC_GetPCLK2Freq() / 1000000UL));
-  printf("USB: full-speed 12 Mbit/s, 48 MHz kernel clock, %s\r\n",
+  printf("USB: %lu MHz kernel clock, %s\r\n",
+         (unsigned long)(HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_USB) / 1000000UL),
          usb_app_mounted() ? "enumerated" : "not yet enumerated");
   printf("RAM: %lu KiB total, %lu B static, %lu B stack reserved, %lu B heap free\r\n",
          (unsigned long)(ram_total / 1024UL),
