@@ -4,6 +4,8 @@ default:
 # Build and run host unit tests for HAL-free modules (e.g. properties)
 test:
     mkdir -p build
+    cc -std=c11 -Wall -Wextra -Iapp app/hysteresis_test.c -o build/hysteresis_test
+    ./build/hysteresis_test
     cc -std=c11 -Wall -Wextra properties/properties_test.c properties/properties.c properties/properties_console.c -o build/properties_test
     ./build/properties_test
 
