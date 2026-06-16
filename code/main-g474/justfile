@@ -6,7 +6,7 @@ test:
     mkdir -p build
     cc -std=c11 -Wall -Wextra -Iapp app/hysteresis_test.c -o build/hysteresis_test
     ./build/hysteresis_test
-    cc -std=c11 -Wall -Wextra properties/properties_test.c properties/properties.c properties/properties_console.c -o build/properties_test
+    cc -std=c11 -Wall -Wextra -I../common/console properties/properties_test.c properties/properties.c properties/properties_console.c -o build/properties_test
     ./build/properties_test
 
 # Generate build system into build/Debug. Re-run after adding/removing source files or changing CMakeLists.txt.

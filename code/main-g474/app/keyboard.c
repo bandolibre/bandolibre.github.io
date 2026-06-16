@@ -7,6 +7,7 @@
 #include "spi_link.h"
 #include "keyboard_layout.h"
 #include "bellow.h"
+#include "buttons.h"
 #include "console.h"
 #include "properties.h"
 #include "report.h"
@@ -71,6 +72,14 @@ typedef struct
 } spi_bus_t;
 
 static spi_bus_t g_bus[2];
+
+/* Effective bellows direction used to map and gate notes. Table mode pins it to
+ * PULL so keys sound while the instrument rests on a table (bellows neutral),
+ * playing each key's pull note; otherwise it follows the real bellows. */
+static bellows_t kbd_bellows(void)
+{
+  return buttons_table_mode() ? BELLOWS_PULL : bellow_direction();
+}
 
 static spi_bus_t *bus_from_hspi(SPI_HandleTypeDef *hspi)
 {
@@ -147,14 +156,18 @@ static int key_is_mapped(uint8_t wing_id, int k)
 static void bus_note_on(spi_bus_t *b, uint8_t wing_id, int k)
 {
   if (b->sounding_note[k] != NOTE_NONE) return;
-  if (bellow_direction() == BELLOWS_NEUTRAL) return;  /* no air moves, no note; table has no neutral slice */
-  uint8_t note = note_table[wing_id][bellow_direction()][k];
+  bellows_t dir = kbd_bellows();
+  if (dir == BELLOWS_NEUTRAL) return;  /* no air moves, no note; table has no neutral slice */
+  uint8_t note = note_table[wing_id][dir][k];
   if (note == NOTE_NONE) return;
   b->sounding_note[k] = note;
-  /* Velocity from how hard the bellows is moving (0..1024 -> 1..127). Floored at
-   * 1 so a note triggered just past the neutral deadzone is still audible; 0
-   * would be a NOTE OFF. */
-  uint8_t velocity = (uint8_t)(1 + (uint32_t)bellow_intensity() * 126u / 1024u);
+  /* In table mode the bellows isn't moving, so use a fixed default; otherwise
+   * derive velocity from how hard the bellows is moving (0..1024 -> 1..127),
+   * floored at 1 so a note triggered just past the neutral deadzone is still
+   * audible (0 would be a NOTE OFF). */
+  uint8_t velocity = buttons_table_mode()
+                       ? (uint8_t)g_properties->tablemode_velocity
+                       : (uint8_t)(1 + (uint32_t)bellow_intensity() * 126u / 1024u);
   printf("NOTE ON  %s wing=%u key=%2d note=%3u vel=%3u\r\n", b->name, wing_id, k, note, velocity);
   usb_app_midi_note_on(b->midi_ch, note, velocity);
 }
@@ -181,7 +194,7 @@ static void bus_bellows_changed(spi_bus_t *b)
   uint8_t wing_id = b->last_good_wing;
   for (int k = 0; k < SPI_LINK_NUM_KEYS; k++)
   {
-    if (bellow_direction() == BELLOWS_NEUTRAL) bus_note_off(b, wing_id, k);
+    if (kbd_bellows() == BELLOWS_NEUTRAL) bus_note_off(b, wing_id, k);
     else if (b->key_pressed[k])       bus_note_on(b, wing_id, k);
   }
 }
@@ -346,7 +359,7 @@ static void keyboard_bellows_changed(void)
 void keyboard_poll(void)
 {
   static bellows_t last_bellows = BELLOWS_NEUTRAL;
-  bellows_t bellows = bellow_direction();
+  bellows_t bellows = kbd_bellows();
   if (bellows != last_bellows)
   {
     last_bellows = bellows;

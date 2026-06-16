@@ -92,6 +92,9 @@ PROPERTY(23, uint16_t, pedal2_ema_alpha,
 PROPERTY(24, uint16_t, pedal2_cc_period_ms,
          .default_value = 10, .min = 1, .max = 1000,
          .description = "Pedal 2 min milliseconds between CC sends")
+PROPERTY(25, uint16_t, tablemode_velocity,
+         .default_value = 80, .min = 1, .max = 127,
+         .description = "Note velocity used in table mode (bellows at rest)")
 PROPERTY(PROPERTY_TAG_NONE, bool, log_bellow,
          .default_value = 0,
          .description = "Log hall readings and bellows direction each poll")
