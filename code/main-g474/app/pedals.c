@@ -47,8 +47,11 @@ static void pedal_poll_one(const char *name, GPIO_TypeDef *det_port, uint16_t de
   uint8_t connected = HAL_GPIO_ReadPin(det_port, det_pin) == GPIO_PIN_RESET;
   uint32_t sample = HAL_ADC_GetValue(adc);
 
+  /* Always log a presence change; otherwise only when log_pedals is set and the
+   * wiper has moved enough to be worth a line. */
   uint32_t delta = sample > st->sample_prev ? sample - st->sample_prev : st->sample_prev - sample;
-  if (connected != st->connected_prev || (connected && delta > PEDAL_WIPER_HYST))
+  if (connected != st->connected_prev ||
+      (g_properties->log_pedals && connected && delta > PEDAL_WIPER_HYST))
   {
     st->connected_prev = connected;
     st->sample_prev = sample;

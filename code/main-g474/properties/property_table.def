@@ -57,16 +57,16 @@ PROPERTY(12, bool, midi_active_sensing_enable,
          .default_value = 1,
          .description = "Send MIDI Active Sensing (0xFE) periodically")
 PROPERTY(13, uint16_t, pedal1_min,
-         .default_value = 830, .min = 0, .max = 4095,
+         .default_value = 920, .min = 0, .max = 4095,
          .description = "Pedal 1 (expression) ADC at minimum -> CC 0")
 PROPERTY(14, uint16_t, pedal1_max,
          .default_value = 3100, .min = 0, .max = 4095,
          .description = "Pedal 1 (expression) ADC at maximum -> CC 127")
 PROPERTY(15, uint16_t, pedal2_min,
-         .default_value = 0, .min = 0, .max = 4095,
+         .default_value = 920, .min = 0, .max = 4095,
          .description = "Pedal 2 (sustain) ADC at minimum -> CC 0")
 PROPERTY(16, uint16_t, pedal2_max,
-         .default_value = 4095, .min = 0, .max = 4095,
+         .default_value = 3100, .min = 0, .max = 4095,
          .description = "Pedal 2 (sustain) ADC at maximum -> CC 127")
 PROPERTY(17, uint16_t, pedal1_hyst_fwd,
          .default_value = 4, .min = 0, .max = 4095,
@@ -98,6 +98,9 @@ PROPERTY(PROPERTY_TAG_NONE, bool, log_bellow,
 PROPERTY(PROPERTY_TAG_NONE, bool, log_spi_stat,
          .default_value = 0,
          .description = "Log SPI link error and reception-rate statistics")
+PROPERTY(PROPERTY_TAG_NONE, bool, log_pedals,
+         .default_value = 0,
+         .description = "Log pedal presence changes and wiper movement each poll")
 PROPERTY(PROPERTY_TAG_NONE, uint16_t, report_hz,
          .default_value = 4, .min = 1, .max = 30,
          .description = "Live-report dashboard refresh rate in Hz")
