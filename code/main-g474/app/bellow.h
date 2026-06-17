@@ -8,14 +8,19 @@
 /* The bandoneon is bisonoric: each key sounds a different note on push vs pull.
  * This module reads the two hall sensors, tracks the bellows direction and how
  * hard it is being pushed or pulled (both derived from the combined hall
- * reading), and emits CC#11 (Expression) from the intensity. */
+ * reading), and emits CC#11 (Expression) from the intensity. FN2 toggles an
+ * inertia mode that runs the readings through a virtual-bellows pressure model
+ * (documentation/bellow_simulation.md). */
 
 /* Current bellows direction (BELLOWS_NEUTRAL/PUSH/PULL). */
 bellows_t bellow_direction(void);
 
 /* How hard the bellows is currently being pushed or pulled, 0..1024 (0 in
  * BELLOWS_NEUTRAL). Same units as the CC#11 expression value; consumers use it
- * to set note-on velocity. */
+ * to set note-on velocity. In inertia mode (FN2) this is the simulated chamber
+ * pressure of the bellow_inertia_* model (which stores the energy of a fast
+ * impulse and bleeds it through the open pallets); otherwise it is the live
+ * reading. See documentation/bellow_simulation.md. */
 uint16_t bellow_intensity(void);
 
 /* Sensitivity multiplier for the level FN1 currently selects, as a Q8 fixed

@@ -36,4 +36,10 @@ void keyboard_poll(void);
  * dt_ms being the elapsed time since the last call. */
 void keyboard_print_rates(uint32_t dt_ms);
 
+/* Count of keys currently held across both wing keyboards, regardless of bellows
+ * direction (open pallets, including in NEUTRAL). The bellows inertia model uses
+ * it to pick how fast chamber pressure bleeds: air escapes through an open pallet
+ * whether or not its reed is sounding. */
+unsigned keyboard_keys_pressed(void);
+
 #endif /* APP_KEYBOARD_H */

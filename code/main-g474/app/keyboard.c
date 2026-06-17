@@ -83,6 +83,21 @@ typedef struct
 
 static spi_bus_t g_bus[2];
 
+/* Number of keys currently held down across both wing keyboards (key_pressed[k]),
+ * regardless of bellows direction — i.e. the count of open pallets, including in
+ * NEUTRAL where nothing sounds yet. Main-loop-only state, so no locking. The
+ * bellows inertia model reads this to bleed chamber pressure: air escapes through
+ * an open pallet whether or not its reed is sounding. */
+unsigned keyboard_keys_pressed(void)
+{
+  unsigned count = 0;
+  for (int i = 0; i < 2; i++)
+    for (int k = 0; k < SPI_LINK_NUM_KEYS; k++)
+      if (g_bus[i].key_pressed[k])
+        count++;
+  return count;
+}
+
 /* Effective bellows direction used to map and gate notes. Table mode pins it to
  * PULL so keys sound while the instrument rests on a table (bellows neutral),
  * playing each key's pull note; otherwise it follows the real bellows. */
