@@ -5,6 +5,7 @@
 
 #include "buttons.h"
 #include "console.h"
+#include "swo.h"
 #include "hysteresis.h"
 #include "keyboard.h"   /* L_MIDI_CH / R_MIDI_CH */
 #include "main.h"
@@ -209,6 +210,25 @@ static void bellow_simulate(void)
                                      g_properties->bellow_inertia_dir_hyst);
 }
 
+static void bellow_swo_trace(void)
+{
+  static uint32_t last_tick;
+  static uint32_t last_header_sent;
+  uint32_t now = HAL_GetTick();
+  if (now - last_tick < 10) return;   /* 100 Hz */
+  last_tick = now;
+  if (!last_header_sent--)
+  {
+    swo_print("timestamp,bellow_p,eff_intensity,keys\n");
+    last_header_sent = 100;
+  }
+  swo_printf("%lu,%d,%u,%u\n",
+             (unsigned long)now,
+             (int)g_bellow_p,
+             (unsigned)g_bellow_eff_intensity,
+             (unsigned)keyboard_keys_pressed());
+}
+
 /* Emits CC#11 (Expression) from the effective intensity through the shared
  * directional-hysteresis + rate-limit pipeline (hysteresis.h, as the pedals use).
  * bellow_cchyst sets the play required before the CC moves (suppresses sensor
@@ -353,6 +373,7 @@ void bellow_poll(void)
   bellows_t bellows_prev = g_bellows;
   bellow_update(s.total);
   bellow_simulate();
+  bellow_swo_trace();
   bellow_send_cc();
   bellow_report(&s, bellows_prev);
 }

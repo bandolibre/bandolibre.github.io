@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "console.h"
+#include "swo.h"
 #include "usb_app.h"
 #include "app/bellow.h"
 #include "app/buttons.h"
@@ -88,20 +89,6 @@ static void MX_USB_PCD_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-/* Sends a string over SWO ITM port 0; no-op if no debugger has enabled tracing */
-static void swo_print(const char *s)
-{
-  while (*s)
-  {
-    if ((ITM->TCR & ITM_TCR_ITMENA_Msk) && (ITM->TER & (1UL << 0)))
-    {
-      while (ITM->PORT[0].u32 == 0);
-      ITM->PORT[0].u8 = (uint8_t)*s;
-    }
-    s++;
-  }
-}
 
 /* One-time boot summary: bus clocks, USB link, and RAM headroom. Static RAM
  * usage is fixed at link time; the heap budget is the gap between _end and the

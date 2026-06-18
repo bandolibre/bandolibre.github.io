@@ -44,6 +44,3 @@ flash:
 reset:
     st-flash reset
 
-# Stream SWO ITM port 0 output (core clock = 16 MHz HSI)
-trace_swo:
-    st-trace --clock=16m
