@@ -258,6 +258,7 @@ int main(void)
      * that lost alignment, then surface link errors (throttled) and a 1 Hz
      * frame/error rate per bus. */
     keyboard_poll();
+
     uint32_t rate_now = HAL_GetTick();
     uint32_t rate_dt = rate_now - last_rate_tick;
     if (rate_dt >= 1000)

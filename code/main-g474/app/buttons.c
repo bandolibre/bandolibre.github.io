@@ -15,7 +15,7 @@ static bool table_mode = false;
 static uint8_t bellow_sens_level = 0;
 
 /* Latched by buttons_poll() on each FN2 press; read via buttons_bellow_inertia(). */
-static bool bellow_inertia = false;
+static bool bellow_inertia = true;
 
 bool buttons_table_mode(void)
 {

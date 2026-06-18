@@ -1,8 +1,11 @@
 #include "bellow.h"
 
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 
+#include "bellow_classify.h"
+#include "bellow_phys.h"
 #include "buttons.h"
 #include "console.h"
 #include "swo.h"
@@ -13,28 +16,29 @@
 #include "report.h"
 #include "usb_app.h"
 
-static const char *const dir_name[] = { "PULL", "PUSH", "NEUTRAL" };
 
 /* ADC handles for the two hall sensors, defined by the CubeMX-generated main.c. */
 extern ADC_HandleTypeDef hadc3;
 extern ADC_HandleTypeDef hadc4;
 
-/* Direction holds and intensity (0..1024) of how hard the bellows is being
- * pushed or pulled; both are derived from the combined hall reading by
- * bellow_update(). */
-static bellows_t g_bellows = BELLOWS_NEUTRAL;
-static uint16_t g_bellow_intensity = 0;
+/* Naive bellows model state. */
+typedef struct {
+  bellows_t direction;
+  uint16_t intensity;
+} bellow_naive_state_t;
 
-/* Inertia model (FN2): a virtual bellows with mass. The player's force F drives a
- * damped oscillator whose pressure P is the simulated intensity; P is pumped by
- * the bellows velocity v and bled by air escaping through the open pallets (keys).
- * All signed/algebraic (pull +, push -). Always integrated so the live report can
- * show it, but only fed to consumers when inertia mode is engaged. See
- * documentation/bellow_simulation.md. */
-static float    g_bellow_v;            /* bellows velocity (momentum) */
-static float    g_bellow_p;            /* chamber pressure (signed); the model output */
-static uint16_t g_bellow_eff_intensity = 0;  /* |P| committed, 0..1024 */
-static bellows_t g_bellow_eff_dir = BELLOWS_NEUTRAL;
+/* Physical simulation model state (HAL-side wrapper adds last_tick). */
+typedef struct {
+  bellow_phys_state_t core;
+  uint32_t            last_tick;
+} bellow_physical_simulation_state_t;
+
+typedef struct {
+  bellows_t direction;
+  uint16_t  intensity;
+} bellow_output_t;
+
+static bellow_output_t g_bellow_out = {.direction = BELLOWS_NEUTRAL, .intensity = 0};
 
 /* Combined-hall calibration: center is the at-rest reading, hard push/pull
  * the readings at full travel. The deadzone sets how far from center the
@@ -46,17 +50,12 @@ static bellows_t g_bellow_eff_dir = BELLOWS_NEUTRAL;
 
 bellows_t bellow_direction(void)
 {
-  /* In inertia mode the committed direction comes from the simulated pressure, so
-   * stored energy keeps the direction non-neutral briefly after the blade returns
-   * (a note pressed just after an impulse still sounds in that direction). */
-  return buttons_bellow_inertia() ? g_bellow_eff_dir : g_bellows;
+  return g_bellow_out.direction;
 }
 
 uint16_t bellow_intensity(void)
 {
-  /* In inertia mode (FN2) consumers see the simulated pressure, so the energy
-   * built up by a fast impulse stays available after the impulse ends. */
-  return buttons_bellow_inertia() ? g_bellow_eff_intensity : g_bellow_intensity;
+  return g_bellow_out.intensity;
 }
 
 /* Bellows sensitivity multiplier (Q8, 256 = x1.0) for the level FN1 currently
@@ -67,166 +66,97 @@ uint16_t bellow_sens_scale_q8(void)
 {
   switch (buttons_bellow_sens_level())
   {
+    case 0:  return g_properties->bellow_scale_low;
     case 1:  return g_properties->bellow_scale_mid;
     case 2:  return g_properties->bellow_scale_high;
     default: return 256;
   }
 }
 
-/* Classifies a (signed) reading into PUSH/NEUTRAL/PULL around a center, with a
- * deadzone of half-width dead (no air moves there) and a hysteresis margin that
- * must be given back before returning to NEUTRAL, so a reading resting at the
- * deadzone edge doesn't chatter. Convention: below center-dead is PUSH, above
- * center+dead is PULL. Shared by the raw hall path (center = bellow_center) and
- * the inertia model (center = 0, pressure units). */
-static bellows_t bellow_classify(bellows_t prev, int32_t value,
-                                 int32_t center, int32_t dead, int32_t hyst)
-{
-  int32_t push_edge = center - dead;
-  int32_t pull_edge = center + dead;
-
-  switch (prev)
-  {
-    case BELLOWS_PUSH:
-      if (value >= push_edge + hyst) return BELLOWS_NEUTRAL;
-      return BELLOWS_PUSH;
-    case BELLOWS_PULL:
-      if (value <= pull_edge - hyst) return BELLOWS_NEUTRAL;
-      return BELLOWS_PULL;
-    default:
-      if (value < push_edge) return BELLOWS_PUSH;
-      if (value > pull_edge) return BELLOWS_PULL;
-      return BELLOWS_NEUTRAL;
-  }
-}
-
-/* Updates direction/intensity from the combined hall reading (see bellow_poll). */
-static void bellow_update(uint32_t hall_total)
+/* Naive bellows model: classifies hall reading into direction and intensity. */
+static void bellow_naive(uint32_t hall_total, bellow_naive_state_t *state)
 {
   uint32_t center = g_properties->bellow_center;
-  uint32_t push_edge = center - g_properties->bellow_dead;
-  uint32_t pull_edge = center + g_properties->bellow_dead;
 
-  g_bellows = bellow_classify(g_bellows, (int32_t)hall_total, (int32_t)center,
-                              g_properties->bellow_dead, g_properties->bellow_hyst);
+  bellow_classify_result_t r = bellow_classify(state->direction, (int32_t)hall_total, (int32_t)center,
+                                               g_properties->bellow_dead, g_properties->bellow_hyst,
+                                               g_properties->bellow_full_push, g_properties->bellow_full_pull);
+  state->direction = r.direction;
+  state->intensity = r.intensity;
+}
 
-  if (g_bellows == BELLOWS_PUSH)
+/* Physical simulation model: HAL wrapper that derives F from the hall reading,
+ * computes dt from the system tick, and delegates the pure-math integration to
+ * bellow_phys_step (bellow_phys.h). See documentation/bellow_simulation.md. */
+static void bellow_physical_simulation(uint32_t hall_total, uint16_t pressed_key_count,
+                                       bellows_t naive_dir,
+                                       bellow_physical_simulation_state_t *state)
+{
+  uint32_t center = g_properties->bellow_center;
+
+  /* Derive a continuous signed force from the raw sensor offset with no
+   * hysteresis or deadzone, scaled to ±1024 so p settles to F at steady state. */
+  int32_t d = (int32_t)hall_total - (int32_t)center;
+  float F;
+  if (d < 0)
   {
-    uint32_t span = push_edge - g_properties->bellow_full_push;
-    uint32_t d = hall_total < push_edge ? push_edge - hall_total : 0;
-    g_bellow_intensity = (uint16_t)(d >= span ? 1024 : (d * 1024) / span);
-  }
-  else if (g_bellows == BELLOWS_PULL)
-  {
-    uint32_t span = g_properties->bellow_full_pull - pull_edge;
-    uint32_t d = hall_total > pull_edge ? hall_total - pull_edge : 0;
-    g_bellow_intensity = (uint16_t)(d >= span ? 1024 : (d * 1024) / span);
+    uint32_t span = center - g_properties->bellow_full_push;
+    F = (float)d * 1024.0f / (float)span;
   }
   else
   {
-    g_bellow_intensity = 0;
+    uint32_t span = g_properties->bellow_full_pull - center;
+    F = (float)d * 1024.0f / (float)span;
   }
 
-  /* Scale by the selected sensitivity level (Q8, >>8 to divide), clamping back
-   * into 0..1024 so a higher scale reaches full intensity (and thus full
-   * velocity/CC) sooner. */
-  uint32_t scaled = ((uint32_t)g_bellow_intensity * bellow_sens_scale_q8()) >> 8;
-  g_bellow_intensity = (uint16_t)(scaled > 1024 ? 1024 : scaled);
-}
-
-/* Integrates the inertia model (FN2) one step from the live reading. The player's
- * signed force F (magnitude g_bellow_intensity, sign from g_bellows) drives a
- * virtual bellows of mass: velocity v carries momentum, pressure P is pumped by v
- * and bled by air escaping through the open pallets (pressed keys). P is the simulated
- * intensity; at steady force it settles to F (reaches the input), while a fast
- * impulse leaves P elevated for the short window the player plays into. See
- * documentation/bellow_simulation.md for the derivation. */
-static void bellow_simulate(void)
-{
-  static float    f_prev;
-  static uint32_t last_tick;
-  static bool     have_last;
-  static bool     inertia_was_on;
-
-  float F = (g_bellows == BELLOWS_PUSH) ? -(float)g_bellow_intensity
-          : (g_bellows == BELLOWS_PULL) ?  (float)g_bellow_intensity
-          : 0.0f;
+  /* When the naive model sees NEUTRAL, the raw offset is within the calibration
+   * deadzone. Zero F so the oscillator drives P toward 0 rather than settling
+   * at the residual calibration error. */
+  if (naive_dir == BELLOWS_NEUTRAL) F = 0.0f;
 
   uint32_t now = HAL_GetTick();
+  float dt_s = (float)(now - state->last_tick) / 1000.0f;
+  state->last_tick = now;
+  if (dt_s > 0.02f) dt_s = 0.02f;   /* clamp so a stalled loop can't blow up the integrator */
 
-  /* Seed on the first poll and re-seed when FN2 is freshly engaged, so the state
-   * starts at the live force and the mode never jumps the sound or direction. */
-  bool inertia = buttons_bellow_inertia();
-  if (!have_last || (inertia && !inertia_was_on))
-  {
-    have_last = true;
-    inertia_was_on = inertia;
-    last_tick = now;
-    f_prev = F;
-    g_bellow_v = 0.0f;
-    g_bellow_p = F;
-    g_bellow_eff_intensity = (uint16_t)(fabsf(F) + 0.5f);
-    g_bellow_eff_dir = g_bellows;
-    return;
-  }
-  inertia_was_on = inertia;
-
-  /* Clamp the step so a stalled loop can't blow up the explicit integrator. */
-  float dt_s = (float)(now - last_tick) / 1000.0f;
-  last_tick = now;
-  if (dt_s > 0.02f) dt_s = 0.02f;
-
-  float omega = 1000.0f / (float)g_properties->bellow_inertia_track_ms;
-  float zeta  = (float)g_properties->bellow_inertia_damping / 256.0f;
-
-  /* Velocity: an explicit impulse kick from the flexion speed (catches a sharp
-   * impulse a sluggish oscillator would miss), then the damped restoring drive
-   * toward F. Semi-implicit Euler: P below is pumped by this new v. */
-  g_bellow_v += (float)g_properties->bellow_inertia_impulse_gain / 256.0f * (F - f_prev);
-  g_bellow_v += (omega * omega * (F - g_bellow_p) - 2.0f * zeta * omega * g_bellow_v) * dt_s;
-  f_prev = F;
-
-  g_bellow_p += g_bellow_v * dt_s;
-
-  /* Pressure leaks through the open pallets: faster the more keys are held (air
-   * escapes whether or not the reed sounds, e.g. keys held at neutral before an
-   * impulse). Clamped Euler (factor floored at 0) is stable, no transcendental. */
-  float leak = ((float)g_properties->bellow_inertia_leak_quiet +
-                (float)g_properties->bellow_inertia_leak_per_key *
-                (float)keyboard_keys_pressed()) / 256.0f;
-  float decay = 1.0f - leak * dt_s;
-  if (decay < 0.0f) decay = 0.0f;
-  g_bellow_p *= decay;
-
-  if (g_bellow_p >  1024.0f) g_bellow_p =  1024.0f;
-  if (g_bellow_p < -1024.0f) g_bellow_p = -1024.0f;
-
-  /* Commit the effective intensity (magnitude, responsive) and direction (gated
-   * only at the zero crossing by the shared deadzone+hysteresis, so push<->pull
-   * can't chatter and retrigger the wrong bisonoric note). */
-  g_bellow_eff_intensity = (uint16_t)(fabsf(g_bellow_p) + 0.5f);
-  g_bellow_eff_dir = bellow_classify(g_bellow_eff_dir, (int32_t)g_bellow_p, 0,
-                                     g_properties->bellow_inertia_dir_dead,
-                                     g_properties->bellow_inertia_dir_hyst);
+  bellow_phys_params_t params = {
+    .track_ms      = g_properties->bellow_inertia_track_ms,
+    .damping       = g_properties->bellow_inertia_damping,
+    .impulse_gain  = g_properties->bellow_inertia_impulse_gain,
+    .leak_quiet    = g_properties->bellow_inertia_leak_quiet,
+    .leak_per_key  = g_properties->bellow_inertia_leak_per_key,
+    .dir_dead      = g_properties->bellow_inertia_dir_dead,
+    .dir_hyst      = g_properties->bellow_inertia_dir_hyst,
+  };
+  bellow_phys_step(&state->core, F, dt_s, pressed_key_count, &params);
 }
 
-static void bellow_swo_trace(void)
+static void bellow_swo_trace(const bellow_naive_state_t *naive, const bellow_physical_simulation_state_t *phys,
+                             int32_t hall_total_centred, uint16_t keys)
 {
   static uint32_t last_tick;
   static uint32_t last_header_sent;
   uint32_t now = HAL_GetTick();
   if (now - last_tick < 10) return;   /* 100 Hz */
   last_tick = now;
-  if (!last_header_sent--)
+  if (last_header_sent == 0)
   {
-    swo_print("timestamp,bellow_p,eff_intensity,keys\n");
+    swo_print("timestamp,inertia,"
+              "naive.direction,naive.intensity,"
+              "phys.v,phys.p,phys.eff_intensity,phys.eff_dir,phys.f_prev,"
+              "hall_total_centred,keys\n");
     last_header_sent = 100;
   }
-  swo_printf("%lu,%d,%u,%u\n",
-             (unsigned long)now,
-             (int)g_bellow_p,
-             (unsigned)g_bellow_eff_intensity,
-             (unsigned)keyboard_keys_pressed());
+  last_header_sent--;
+  swo_printf("%lu,%u,"
+             "%d,%u,"
+             "%.3f,%.3f,%u,%d,%.3f,"
+             "%ld,%u\n",
+             (unsigned long)now, (unsigned)buttons_bellow_inertia(),
+             (int)naive->direction, (unsigned)naive->intensity,
+             (double)phys->core.v, (double)phys->core.p, (unsigned)phys->core.eff_intensity,
+             (int)phys->core.eff_dir, (double)phys->core.f_prev,
+             (long)hall_total_centred, (unsigned)keys);
 }
 
 /* Emits CC#11 (Expression) from the effective intensity through the shared
@@ -234,10 +164,27 @@ static void bellow_swo_trace(void)
  * bellow_cchyst sets the play required before the CC moves (suppresses sensor
  * jitter) and bellow_cc_period_ms caps the send rate; the rate limit coalesces
  * rather than drops, so the latest value is always eventually sent. Fed by
- * bellow_intensity(), so the naive and inertia modes share one CC pipeline. */
+ * bellow_intensity(), so the naive and inertia modes share one CC pipeline.
+ *
+ * When intensity drops to 0 (bellow at rest), CC=0 is forced and the
+ * hysteresis anchor is reset. Without this, the anchor stays at bellow_cchyst
+ * and the fwd_thresh condition (x + fwd_thresh < anchor -> 0+16 < 16 -> false)
+ * never advances it down, leaving CC=1 stuck indefinitely. */
 static void bellow_send_cc(void)
 {
   static hyst_state_t st;
+
+  uint16_t intensity = bellow_intensity();
+  if (intensity == 0)
+  {
+    if (st.have_out && st.last_out != 0)
+    {
+      usb_app_midi_control_change(L_MIDI_CH, 11, 0);
+      usb_app_midi_control_change(R_MIDI_CH, 11, 0);
+    }
+    st = (hyst_state_t){0};
+    return;
+  }
 
   hyst_config_t cfg = {
     .in_min = 0, .in_max = 1024, .out_max = 127,
@@ -246,7 +193,7 @@ static void bellow_send_cc(void)
   };
 
   uint8_t value;
-  if (!hyst_update(&st, &cfg, bellow_intensity(), HAL_GetTick(), &value)) return;
+  if (!hyst_update(&st, &cfg, intensity, HAL_GetTick(), &value)) return;
 
   /* The single bellows drives both keyboards, which play on separate MIDI
    * channels (L_MIDI_CH / R_MIDI_CH), so send the expression CC on both. */
@@ -265,7 +212,6 @@ static void delay_us(uint32_t us)
 typedef struct {
   uint16_t hall0;
   uint16_t hall1;
-  uint16_t total;
   uint32_t conv_cycles;  /* CPU cycles spent in the two ADC conversions */
 } bellow_sample_t;
 
@@ -295,16 +241,14 @@ static bellow_sample_t bellow_sample(void)
   bellow_sample_t s;
   s.hall0 = (uint16_t)hall0;
   s.hall1 = (uint16_t)hall1;
-  s.total = (uint16_t)(hall0 + hall1);
   s.conv_cycles = conv_cycles;
   return s;
 }
 
-/* Emits the optional console log and live-report dashboard for one sample.
- * bellows_prev is the direction before bellow_update() ran this poll. */
-static void bellow_report(const bellow_sample_t *s, bellows_t bellows_prev)
+/* Emits the optional console log and live-report dashboard for one sample. */
+static void bellow_report(const bellow_sample_t *s, const bellow_naive_state_t *naive_state,
+                          const bellow_physical_simulation_state_t *phys)
 {
-  static uint32_t hall_total_prev = 0xFFFFFFFF;
 
   /* Per-frame stats, accumulated every poll and reset after each emitted report
    * frame (and on (re-)enable so the first frame never shows stale data), so each
@@ -321,24 +265,13 @@ static void bellow_report(const bellow_sample_t *s, bellows_t bellows_prev)
     n = 0; sum0 = sum1 = 0; sq0 = sq1 = 0;
   }
   show_was_on = g_properties->show_bellow;
-  if (s->total < hall_min) hall_min = s->total;
-  if (s->total > hall_max) hall_max = s->total;
+  uint16_t total = s->hall0 + s->hall1;
+  if (total < hall_min) hall_min = total;
+  if (total > hall_max) hall_max = total;
   n++;
   sum0 += s->hall0; sq0 += (uint32_t)s->hall0 * s->hall0;
   sum1 += s->hall1; sq1 += (uint32_t)s->hall1 * s->hall1;
 
-  /* Always log a direction change; otherwise only when log_bellow is set and the
-   * combined reading has moved enough to be worth a line. */
-  uint32_t hall_total_delta = s->total > hall_total_prev ? s->total - hall_total_prev : hall_total_prev - s->total;
-  if(g_properties->log_bellow)
-  {
-    if (g_bellows != bellows_prev || hall_total_delta > g_properties->bellow_cchyst)
-    {
-      hall_total_prev = s->total;
-      printf("HALL0=%u HALL1=%u TOTAL=%u DIR=%s\r\n",
-            (unsigned)s->hall0, (unsigned)s->hall1, (unsigned)s->total, dir_name[g_bellows]);
-    }
-  }
 
   if (g_report_due && g_properties->show_bellow)
   {
@@ -347,15 +280,15 @@ static void bellow_report(const bellow_sample_t *s, bellows_t bellows_prev)
     float std0 = sqrtf((float)sq0 / n - mean0 * mean0);
     float std1 = sqrtf((float)sq1 / n - mean1 * mean1);
     float conv_us = (float)s->conv_cycles / (SystemCoreClock / 1000000.0f);
-    float force = (g_bellows == BELLOWS_PUSH) ? -(float)g_bellow_intensity
-                : (g_bellows == BELLOWS_PULL) ?  (float)g_bellow_intensity : 0.0f;
-    console_dash_println("BELLOW  dir=%-7s int=%4u  force=%+5d v=%+8.1f P=%+7.1f  eff=%4u(%s) keys=%u",
-                         dir_name[g_bellows], g_bellow_intensity,
-                         (int)force, (double)g_bellow_v, (double)g_bellow_p,
-                         g_bellow_eff_intensity, dir_name[g_bellow_eff_dir],
+    float force = (naive_state->direction == BELLOWS_PUSH) ? -(float)naive_state->intensity
+                : (naive_state->direction == BELLOWS_PULL) ?  (float)naive_state->intensity : 0.0f;
+    console_dash_println("BELLOW  dir=%-7d int=%4u  force=%+5d v=%+8.1f P=%+7.1f  eff=%4u(%d) keys=%u",
+                         (int)naive_state->direction, naive_state->intensity,
+                         (int)force, (double)phys->core.v, (double)phys->core.p,
+                         phys->core.eff_intensity, (int)phys->core.eff_dir,
                          keyboard_keys_pressed());
     console_dash_println("        hall0=%4u hall1=%4u total=%5u  (min %u max %u)  sample_count=%lu  conv=%.1fus",
-                         (unsigned)s->hall0, (unsigned)s->hall1, (unsigned)s->total,
+                         (unsigned)s->hall0, (unsigned)s->hall1, (unsigned)s->hall0 + s->hall1,
                          hall_min, hall_max, (unsigned long)n, (double)conv_us);
     console_dash_println("        std0=%7.2f std1=%7.2f", (double)std0, (double)std1);
 
@@ -369,13 +302,28 @@ static void bellow_report(const bellow_sample_t *s, bellows_t bellows_prev)
  * the result via bellow_direction() and track changes themselves. */
 void bellow_poll(void)
 {
+  static bellow_naive_state_t naive = {.direction = BELLOWS_NEUTRAL, .intensity = 0};
+  static bellow_physical_simulation_state_t phys = {0};
+
   bellow_sample_t s = bellow_sample();
-  bellows_t bellows_prev = g_bellows;
-  bellow_update(s.total);
-  bellow_simulate();
-  bellow_swo_trace();
+  uint32_t hall_total = s.hall0 + s.hall1;
+  bellow_naive(hall_total, &naive);
+  bellow_physical_simulation(hall_total, keyboard_keys_pressed(), naive.direction, &phys);
+
+  if (buttons_bellow_inertia()) {
+    g_bellow_out.direction = phys.core.eff_dir;
+    g_bellow_out.intensity = phys.core.eff_intensity;
+  } else {
+    g_bellow_out.direction = naive.direction;
+    g_bellow_out.intensity = naive.intensity;
+  }
+  uint32_t scaled = ((uint32_t)g_bellow_out.intensity * bellow_sens_scale_q8()) >> 8;
+  g_bellow_out.intensity = (uint16_t)(scaled > 1024 ? 1024 : scaled);
+
+  int32_t hall_total_centred = (int32_t)hall_total - (int32_t)g_properties->bellow_center;
+  bellow_swo_trace(&naive, &phys, hall_total_centred, keyboard_keys_pressed());
   bellow_send_cc();
-  bellow_report(&s, bellows_prev);
+  bellow_report(&s, &naive, &phys);
 }
 
 /* Diagnostic sweep: for each bellow_settle_us value in a fixed range, take
