@@ -19,7 +19,7 @@ void swo_print(const char *s)
 
 void swo_printf(const char *fmt, ...)
 {
-  char buf[64];
+  char buf[128];
   va_list ap;
   va_start(ap, fmt);
   vsnprintf(buf, sizeof(buf), fmt, ap);
