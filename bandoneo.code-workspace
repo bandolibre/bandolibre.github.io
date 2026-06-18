@@ -3,6 +3,9 @@
 		{
 			"name": "bandoneo",
 			"path": "."
+		},
+		{
+			"path": "../STM32CubeG4"
 		}
 	],
 	"settings": {

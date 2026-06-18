@@ -113,17 +113,6 @@ static spi_bus_t *bus_from_hspi(SPI_HandleTypeDef *hspi)
   return NULL;
 }
 
-/* Starts one frame reception. Uses RX DMA when the SPI has a linked DMA channel
- * (hdmarx), so the frame is stored without per-word CPU work and the link keeps
- * up at high SCK; falls back to interrupt mode if DMA isn't wired yet (e.g.
- * before the .ioc SPIx_RX DMA request is regenerated). The control flow is
- * identical either way: completion/CRC/overrun land in the same HAL callbacks. */
-static HAL_StatusTypeDef bus_rearm(spi_bus_t *b)
-{
-  if (b->hspi->hdmarx != NULL)
-    return HAL_SPI_Receive_DMA(b->hspi, (uint8_t *)b->rx[b->rx_active], SPI_LINK_FRAME_WORDS);
-  return HAL_SPI_Receive_IT(b->hspi, (uint8_t *)b->rx[b->rx_active], SPI_LINK_FRAME_WORDS);
-}
 
 /* Completion and error callbacks never re-arm directly: re-arming the instant a
  * frame ends lands the next receive mid-stream (the wing is still finishing /
@@ -263,7 +252,7 @@ static void bus_process_frame(spi_bus_t *b, const uint16_t *frame)
     {
       b->key_pressed[k] = 1;
       // if (key_is_mapped(wing_id, k))   /* no note on this wing -> noise */
-        printf("PRESS %u %d\r\n", wing_id, k);
+      printf("PRESS %u %d\r\n", wing_id, k);
       bus_note_on(b, wing_id, k);
     }
     else if (b->key_pressed[k] && v >= g_properties->key_release)
@@ -311,7 +300,7 @@ static void bus_service_resync(spi_bus_t *b)
   __HAL_SPI_CLEAR_OVRFLAG(b->hspi);
 
   if (HAL_GPIO_ReadPin(b->nss_port, b->nss_pin) == GPIO_PIN_RESET) return;
-  if (bus_rearm(b) == HAL_OK)
+  if (HAL_SPI_Receive_DMA(b->hspi, (uint8_t *)b->rx[b->rx_active], SPI_LINK_FRAME_WORDS) == HAL_OK)
     b->needs_resync = 0;
 }
 
@@ -372,7 +361,7 @@ static void bus_report(spi_bus_t *b)
   uint32_t rate = dt ? (good - b->rep_last_good) * 1000u / dt : 0;
   b->rep_last_good = good;
   b->rep_last_tick = now;
-  console_dash_println("%-6s good=%8lu mis=%6lu crc=%6lu bus=%6lu  %5lu/s  (wing=%u bad0=%u)",
+  console_dash_println("%-6s good=%8lu bad_id=%6lu bad_crc=%6lu bad_bus=%6lu  %5lu/s  (wing=%u bad0=%u)",
                        b->name, (unsigned long)good, (unsigned long)b->rx_misaligned,
                        (unsigned long)b->crc_err, (unsigned long)b->bus_err,
                        (unsigned long)rate, b->last_good_wing, (unsigned)b->last_bad_word0);
