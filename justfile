@@ -16,3 +16,6 @@ trace_swo:
 # Stream SWO ITM port 0 output (core clock = 16 MHz HSI)
 plotjuggler_bridge:
     st-trace --clock=96m | python3 tools/plotjuggler_bridge.py
+
+plotjuggler:
+    ~/bin/plotjuggler -l tools/bellow_layout.xml --start_streamer -n

@@ -40,7 +40,7 @@ def parse_csv_stream():
         now = time.time()
         delta = now - start
         if delta > 2:
-            print(f"Revieved {row_count/delta:5.1f} rows/sec  {sample_count/delta:5git .1f} sample/sec")
+            print(f"Revieved {row_count/delta:5.1f} rows/sec  {sample_count/delta:5.1f} sample/sec")
             start = now
             row_count, sample_count = 0, 0
         if not row:
