@@ -508,8 +508,8 @@ static void MX_ADC3_Init(void)
   hadc3.Init.DMAContinuousRequests = DISABLE;
   hadc3.Init.Overrun = ADC_OVR_DATA_PRESERVED;
   hadc3.Init.OversamplingMode = ENABLE;
-  hadc3.Init.Oversampling.Ratio = ADC_OVERSAMPLING_RATIO_64;
-  hadc3.Init.Oversampling.RightBitShift = ADC_RIGHTBITSHIFT_6;
+  hadc3.Init.Oversampling.Ratio = ADC_OVERSAMPLING_RATIO_256;
+  hadc3.Init.Oversampling.RightBitShift = ADC_RIGHTBITSHIFT_7;
   hadc3.Init.Oversampling.TriggeredMode = ADC_TRIGGEREDMODE_SINGLE_TRIGGER;
   hadc3.Init.Oversampling.OversamplingStopReset = ADC_REGOVERSAMPLING_CONTINUED_MODE;
   if (HAL_ADC_Init(&hadc3) != HAL_OK)
@@ -579,7 +579,7 @@ static void MX_ADC4_Init(void)
   hadc4.Init.DMAContinuousRequests = DISABLE;
   hadc4.Init.Overrun = ADC_OVR_DATA_PRESERVED;
   hadc4.Init.OversamplingMode = ENABLE;
-  hadc4.Init.Oversampling.Ratio = ADC_OVERSAMPLING_RATIO_64;
+  hadc4.Init.Oversampling.Ratio = ADC_OVERSAMPLING_RATIO_256;
   hadc4.Init.Oversampling.RightBitShift = ADC_RIGHTBITSHIFT_6;
   hadc4.Init.Oversampling.TriggeredMode = ADC_TRIGGEREDMODE_SINGLE_TRIGGER;
   hadc4.Init.Oversampling.OversamplingStopReset = ADC_REGOVERSAMPLING_CONTINUED_MODE;
@@ -782,6 +782,9 @@ static void MX_DMA_Init(void)
   /* DMA1_Channel2_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel2_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel2_IRQn);
+  /* DMAMUX_OVR_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMAMUX_OVR_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMAMUX_OVR_IRQn);
 
 }
 

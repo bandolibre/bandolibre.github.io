@@ -56,6 +56,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     app/midi.c
     app/pedals.c
     app/report.c
+    Core/Src/swo.c
     properties/properties.c
     properties/properties_console.c
     ../third_party/microrl/src/microrl.c

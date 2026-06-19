@@ -27,19 +27,19 @@ PROPERTY(2, uint16_t, key_release,
          .default_value = 2100, .min = 0, .max = 4095,
          .description = "ADC above this -> key released")
 PROPERTY(3, uint16_t, bellow_center,
-         .default_value = 3750, .min = 0, .max = 8191,
+         .default_value = 11280, .min = 0, .max = 30000,
          .description = "Combined hall reading at rest")
 PROPERTY(4, uint16_t, bellow_dead,
-         .default_value = 40, .min = 0, .max = 4095,
+         .default_value = 80, .min = 0, .max = 4095,
          .description = "Travel each way before registering direction; entry threshold is dead/2 + hyst/2 from center")
 PROPERTY(5, uint16_t, bellow_hyst,
-         .default_value = 20, .min = 0, .max = 4095,
+         .default_value = 40, .min = 0, .max = 4095,
          .description = "Margin given back before returning to neutral")
 PROPERTY(6, uint16_t, bellow_full_push,
-         .default_value = 3400, .min = 0, .max = 8191,
+         .default_value = 9000, .min = 0, .max = 30000,
          .description = "Combined hall reading at full push")
 PROPERTY(7, uint16_t, bellow_full_pull,
-         .default_value = 4200, .min = 0, .max = 8191,
+         .default_value = 13000, .min = 0, .max = 30000,
          .description = "Combined hall reading at full pull")
 PROPERTY(8, uint16_t, bellow_cchyst,
          .default_value = 16, .min = 0, .max = 1024,
@@ -95,36 +95,36 @@ PROPERTY(24, uint16_t, pedal2_cc_period_ms,
 PROPERTY(25, uint16_t, tablemode_velocity,
          .default_value = 80, .min = 1, .max = 127,
          .description = "Note velocity used in table mode (bellows at rest)")
-PROPERTY(26, uint16_t, bellow_scale_mid,
-         .default_value = 384, .min = 16, .max = 1024,
-         .description = "Bellows sensitivity scale at level 1, /256 (256 = x1.0)")
-PROPERTY(27, uint16_t, bellow_scale_high,
-         .default_value = 512, .min = 16, .max = 1024,
-         .description = "Bellows sensitivity scale at level 2, /256 (256 = x1.0)")
-PROPERTY(28, uint16_t, bellow_inertia_track_ms,
-         .default_value = 40, .min = 5, .max = 1000,
-         .description = "Inertia (FN2): pressure-tracks-force time, ms (omega = 1000/this)")
-PROPERTY(29, uint16_t, bellow_inertia_damping,
-         .default_value = 256, .min = 64, .max = 512,
-         .description = "Inertia (FN2): damping ratio zeta, /256 (256 = critical, no bounce; lower = more bounce)")
-PROPERTY(30, uint16_t, bellow_inertia_leak_quiet,
-         .default_value = 64, .min = 0, .max = 2560,
-         .description = "Inertia (FN2): pressure bleed rate when no key held, /256 per second (256 = 1.0/s; 0 = no drift)")
-PROPERTY(31, uint16_t, bellow_inertia_leak_per_key,
-         .default_value = 128, .min = 0, .max = 2560,
-         .description = "Inertia (FN2): extra pressure bleed per pressed key (open pallet), /256 per second (256 = 1.0/s)")
-PROPERTY(32, uint16_t, bellow_inertia_impulse_gain,
-         .default_value = 64, .min = 0, .max = 2048,
-         .description = "Inertia (FN2): flexion-speed impulse feed-forward, /256 (256 = 1.0; 0 = off)")
-PROPERTY(33, uint16_t, bellow_inertia_dir_dead,
-         .default_value = 64, .min = 0, .max = 512,
-         .description = "Inertia (FN2): neutral deadzone in pressure units (0-1024); entry threshold is dir_dead/2 + dir_hyst/2")
-PROPERTY(34, uint16_t, bellow_inertia_dir_hyst,
-         .default_value = 32, .min = 0, .max = 512,
-         .description = "Inertia (FN2): margin given back before returning to neutral, pressure units; pair with dir_dead")
-PROPERTY(35, uint16_t, bellow_scale_low,
+PROPERTY(26, uint16_t, bellow_scale_low,
          .default_value = 256, .min = 16, .max = 1024,
          .description = "Bellows sensitivity scale at level 0 (unity), /256 (256 = x1.0)")
+PROPERTY(27, uint16_t, bellow_scale_mid,
+         .default_value = 384, .min = 16, .max = 1024,
+         .description = "Bellows sensitivity scale at level 1, /256 (256 = x1.0)")
+PROPERTY(28, uint16_t, bellow_scale_high,
+         .default_value = 512, .min = 16, .max = 1024,
+         .description = "Bellows sensitivity scale at level 2, /256 (256 = x1.0)")
+PROPERTY(29, uint16_t, bellow_inertia_track_ms,
+         .default_value = 40, .min = 5, .max = 1000,
+         .description = "Inertia (FN2): pressure-tracks-force time, ms (omega = 1000/this)")
+PROPERTY(30, uint16_t, bellow_inertia_damping,
+         .default_value = 256, .min = 64, .max = 512,
+         .description = "Inertia (FN2): damping ratio zeta, /256 (256 = critical, no bounce; lower = more bounce)")
+PROPERTY(31, uint16_t, bellow_inertia_leak_quiet,
+         .default_value = 64, .min = 0, .max = 2560,
+         .description = "Inertia (FN2): pressure bleed rate when no key held, /256 per second (256 = 1.0/s; 0 = no drift)")
+PROPERTY(32, uint16_t, bellow_inertia_leak_per_key,
+         .default_value = 128, .min = 0, .max = 2560,
+         .description = "Inertia (FN2): extra pressure bleed per pressed key (open pallet), /256 per second (256 = 1.0/s)")
+PROPERTY(33, uint16_t, bellow_inertia_impulse_gain,
+         .default_value = 64, .min = 0, .max = 65535,
+         .description = "Inertia (FN2): flexion-speed impulse feed-forward, /256 (256 = 1.0; 0 = off)")
+PROPERTY(34, uint16_t, bellow_inertia_dir_dead,
+         .default_value = 64, .min = 0, .max = 512,
+         .description = "Inertia (FN2): neutral deadzone in pressure units (0-1024); entry threshold is dir_dead/2 + dir_hyst/2")
+PROPERTY(35, uint16_t, bellow_inertia_dir_hyst,
+         .default_value = 32, .min = 0, .max = 512,
+         .description = "Inertia (FN2): margin given back before returning to neutral, pressure units; pair with dir_dead")
 PROPERTY(PROPERTY_TAG_NONE, bool, log_bellow,
          .default_value = 0,
          .description = "Log hall readings and bellows direction each poll")

@@ -94,25 +94,33 @@ static void bellow_physical_simulation(uint32_t hall_total, uint16_t pressed_key
 {
   uint32_t center = g_properties->bellow_center;
 
-  /* Derive a continuous signed force from the raw sensor offset with no
-   * hysteresis or deadzone, scaled to ±1024 so p settles to F at steady state. */
+  /* Derive a continuous signed force from the raw sensor offset.
+   * Inside the deadzone (±bellow_dead from center), F = 0.
+   * Outside the deadzone, F increases linearly from 0 at the boundary
+   * to ±1024 at the full travel limits (full_push/full_pull). */
   int32_t d = (int32_t)hall_total - (int32_t)center;
+  int32_t dead = (int32_t)g_properties->bellow_dead /2;
   float F;
-  if (d < 0)
+
+  if (d < -dead)
   {
-    uint32_t span = center - g_properties->bellow_full_push;
-    F = (float)d * 1024.0f / (float)span;
+    /* Push: interpolate from -dead to full_push, with F ranging from 0 to -1024 */
+    int32_t span = center - g_properties->bellow_full_push - dead;
+    int32_t effective_d = d + dead;  /* offset from deadzone boundary */
+    F = (float)effective_d * 1024.0f / (float)span;
+  }
+  else if(d > dead)
+  {
+    /* Pull: interpolate from +dead to full_pull, with F ranging from 0 to +1024 */
+    int32_t span = g_properties->bellow_full_pull - center - dead;
+    int32_t effective_d = d - dead;  /* offset from deadzone boundary */
+    F = (float)effective_d * 1024.0f / (float)span;
   }
   else
   {
-    uint32_t span = g_properties->bellow_full_pull - center;
-    F = (float)d * 1024.0f / (float)span;
+    /* Inside deadzone */
+    F = 0.0f;
   }
-
-  /* When the naive model sees NEUTRAL, the raw offset is within the calibration
-   * deadzone. Zero F so the oscillator drives P toward 0 rather than settling
-   * at the residual calibration error. */
-  if (naive_dir == BELLOWS_NEUTRAL) F = 0.0f;
 
   uint32_t now = HAL_GetTick();
   float dt_s = (float)(now - state->last_tick) / 1000.0f;

@@ -324,7 +324,7 @@ static void bus_process_frame(SPIBus *b, const uint16_t *frame)
       b->key_pressed[k] = 0;
       bus_note_off(b, wing_id, k);
     }
-    b->mapped_keys_pressed += b->key_pressed[k];
+    b->mapped_keys_pressed += is_mapped && b->key_pressed[k];
   }
 }
 
