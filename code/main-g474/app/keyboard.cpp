@@ -106,6 +106,7 @@ struct SPIBus
   uint8_t  key_min_init;
   uint8_t  key_pressed[SPI_LINK_NUM_KEYS];
   uint8_t  sounding_note[SPI_LINK_NUM_KEYS];
+  uint16_t mapped_keys_pressed;
 
   /* Last good frame's raw readings and their running statistics, for the
    * show_keyboard live report (main-loop only). */
@@ -125,19 +126,13 @@ static SPIBus g_bus[2];
 // Increated in situation that should never happen.
 static uint16_t g_spi_bus_state_error = 0;
 
-/* Number of keys currently held down across both wing keyboards (key_pressed[k]),
- * regardless of bellows direction — i.e. the count of open pallets, including in
- * NEUTRAL where nothing sounds yet. Main-loop-only state, so no locking. The
+/* Number of mapped keys currently held down across both wing keyboards,
+ * regardless of bellows direction. Main-loop-only state, so no locking. The
  * bellows inertia model reads this to bleed chamber pressure: air escapes through
  * an open pallet whether or not its reed is sounding. */
 unsigned keyboard_keys_pressed(void)
 {
-  unsigned count = 0;
-  for (int i = 0; i < 2; i++)
-    for (int k = 0; k < SPI_LINK_NUM_KEYS; k++)
-      if (g_bus[i].key_pressed[k])
-        count++;
-  return count;
+  return g_bus[0].mapped_keys_pressed + g_bus[1].mapped_keys_pressed;
 }
 
 /* Effective bellows direction used to map and gate notes. Table mode pins it to
@@ -309,17 +304,20 @@ static void bus_process_frame(SPIBus *b, const uint16_t *frame)
   if (g_properties->show_keyboard & g_properties->show_keyboard_stats & bit)
     hall_stats_update(&b->hall, meas);
 
+  b->mapped_keys_pressed = 0;
   for (int k = 0; k < SPI_LINK_NUM_KEYS; k++)
   {
     uint16_t v = meas[k];
     if (!b->key_min_init || v < b->key_min[k]) b->key_min[k] = v;
     if (b->key_min[k] == 0) continue;          /* unpopulated channel */
 
+    const bool is_mapped = note_table[wing_id][BELLOWS_PUSH][k] != NOTE_NONE;
     if (!b->key_pressed[k] && v <= g_properties->key_press)
     {
       b->key_pressed[k] = 1;
-      // if (key_is_mapped(wing_id, k))   /* no note on this wing -> noise */
-      printf("PRESS %u %d\r\n", wing_id, k);
+      if(is_mapped) {
+        printf("PRESS %u %d\r\n", wing_id, k);
+      }
       bus_note_on(b, wing_id, k);
     }
     else if (b->key_pressed[k] && v >= g_properties->key_release)
@@ -327,6 +325,7 @@ static void bus_process_frame(SPIBus *b, const uint16_t *frame)
       b->key_pressed[k] = 0;
       bus_note_off(b, wing_id, k);
     }
+    b->mapped_keys_pressed += b->key_pressed[k];
   }
   b->key_min_init = 1;
 }
