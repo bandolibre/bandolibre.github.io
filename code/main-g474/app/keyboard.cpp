@@ -103,7 +103,6 @@ struct SPIBus
    * that key without a matching NOTE OFF yet (key_pressed alone isn't enough
    * since a key can be held through a bellows direction change). */
   uint16_t key_min[SPI_LINK_NUM_KEYS];
-  uint8_t  key_min_init;
   uint8_t  key_pressed[SPI_LINK_NUM_KEYS];
   uint8_t  sounding_note[SPI_LINK_NUM_KEYS];
   uint16_t mapped_keys_pressed;
@@ -308,7 +307,7 @@ static void bus_process_frame(SPIBus *b, const uint16_t *frame)
   for (int k = 0; k < SPI_LINK_NUM_KEYS; k++)
   {
     uint16_t v = meas[k];
-    if (!b->key_min_init || v < b->key_min[k]) b->key_min[k] = v;
+    if (v < b->key_min[k]) b->key_min[k] = v;
     if (b->key_min[k] == 0) continue;          /* unpopulated channel */
 
     const bool is_mapped = note_table[wing_id][BELLOWS_PUSH][k] != NOTE_NONE;
@@ -327,7 +326,6 @@ static void bus_process_frame(SPIBus *b, const uint16_t *frame)
     }
     b->mapped_keys_pressed += b->key_pressed[k];
   }
-  b->key_min_init = 1;
 }
 
 /* Decodes the latest good frame the ISR handed over. */
@@ -457,6 +455,8 @@ void keyboard_init(void)
   {
     spi_drain_and_reset(g_bus[i].hspi);
     g_bus[i].needs_resync = 1;
+    for (int k = 0; k < SPI_LINK_NUM_KEYS; k++)
+      g_bus[i].key_min[k] = UINT16_MAX;
     hall_stats_init(&g_bus[i].hall);
   }
 }
