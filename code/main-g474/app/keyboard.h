@@ -3,6 +3,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* 0-based (on-wire) MIDI channels for the two keyboards: the left wing (SPI1)
  * and the right (SPI2) play on separate channels so a host can route/voice them
  * independently. The single bellows drives both, so its expression CC is sent
@@ -41,5 +45,9 @@ void keyboard_print_rates(uint32_t dt_ms);
  * it to pick how fast chamber pressure bleeds: air escapes through an open pallet
  * whether or not its reed is sounding. */
 unsigned keyboard_keys_pressed(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* APP_KEYBOARD_H */

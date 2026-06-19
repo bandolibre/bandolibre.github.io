@@ -6,6 +6,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* MIDI note numbers by name: NOTE(<letter>, <octave>), C4 = 60 (middle C).
  * Append 's' to the letter for sharp, e.g. NOTE(As, 3) = 58.
  * NOTE_NONE marks a key id with no assigned note. */
@@ -28,59 +32,7 @@ typedef enum { BELLOWS_PULL = 0, BELLOWS_PUSH = 1, BELLOWS_NEUTRAL = 2 } bellows
 
 #define NUM_KEYS 40
 
-static const uint8_t note_table[3][2][NUM_KEYS] =
-{
-  [1] = /* rheinische_tonlage_142_tones, right */
-  {
-    [BELLOWS_PULL] =
-    {
-      /*  0 */ NOTE(A,3), NOTE(B,3), NOTE(Ds,4), NOTE(E,4), NOTE(F,4),
-      /*  5 */ NOTE(F,5), NOTE(As,3), NOTE(As,4), NOTE(Ds,5), NOTE(D,4),
-      /* 10 */ NOTE(Gs,4), NOTE(B,4), NOTE(Cs,5), NOTE(Cs,4), NOTE(C,4),
-      /* 15 */ NOTE(Fs,5), NOTE(G,4), NOTE(A,5), NOTE(A,6), NOTE(As,5),
-      /* 20 */ NOTE(B,6), NOTE(D,5), NOTE(Fs,4), NOTE(A,4), NOTE(Gs,6),
-      /* 25 */ NOTE(C,5), NOTE(Cs,6), NOTE(G,6), NOTE(Gs,5), NOTE(C,6),
-      /* 30 */ NOTE(Fs,6), NOTE(E,6), NOTE(G,5), NOTE(D,6), NOTE(B,5),
-      /* 35 */ NOTE(F,6), NOTE(E,5), NOTE(Ds,6), NOTE_NONE, NOTE_NONE,
-    },
-    [BELLOWS_PUSH] =
-    {
-      /*  0 */ NOTE(A,3), NOTE(B,3), NOTE(Ds,4), NOTE(Fs,4), NOTE(F,4),
-      /*  5 */ NOTE(F,5), NOTE(As,3), NOTE(E,4), NOTE(E,5), NOTE(Cs,4),
-      /* 10 */ NOTE(A,4), NOTE(Cs,5), NOTE(Fs,5), NOTE(C,4), NOTE(D,4),
-      /* 15 */ NOTE(Gs,5), NOTE(Gs,4), NOTE(B,5), NOTE(G,6), NOTE(As,4),
-      /* 20 */ NOTE(A,6), NOTE(E,5), NOTE(G,4), NOTE(B,4), NOTE(Gs,6),
-      /* 25 */ NOTE(D,5), NOTE(E,6), NOTE(Fs,6), NOTE(A,5), NOTE(C,5),
-      /* 30 */ NOTE(As,5), NOTE(C,6), NOTE(Ds,5), NOTE(D,6), NOTE(Cs,6),
-      /* 35 */ NOTE(F,6), NOTE(G,5), NOTE(Ds,6), NOTE_NONE, NOTE_NONE,
-    },
-  },
-  [2] = /* rheinische_tonlage_142_tones, left */
-  {
-    [BELLOWS_PULL] =
-    {
-      /*  0 */ NOTE(D,2), NOTE_NONE, NOTE_NONE, NOTE_NONE, NOTE_NONE,
-      /*  5 */ NOTE_NONE, NOTE_NONE, NOTE_NONE, NOTE(E,2), NOTE(A,2),
-      /* 10 */ NOTE(B,2), NOTE(G,4), NOTE(D,3), NOTE(Gs,2), NOTE(E,3),
-      /* 15 */ NOTE(Gs,3), NOTE(B,3), NOTE(A,4), NOTE(G,3), NOTE(Cs,3),
-      /* 20 */ NOTE(As,2), NOTE(C,4), NOTE(A,3), NOTE(Ds,3), NOTE(E,4),
-      /* 25 */ NOTE(Ds,4), NOTE(F,4), NOTE(As,3), NOTE(F,3), NOTE(Fs,4),
-      /* 30 */ NOTE(D,4), NOTE(C,3), NOTE(Fs,3), NOTE(F,2), NOTE(Cs,4),
-      /* 35 */ NOTE(C,2), NOTE(G,2), NOTE(Ds,2), NOTE(Gs,4), NOTE(Fs,2),
-    },
-    [BELLOWS_PUSH] =
-    {
-      /*  0 */ NOTE(E,2), NOTE_NONE, NOTE_NONE, NOTE_NONE, NOTE_NONE,
-      /*  5 */ NOTE_NONE, NOTE_NONE, NOTE_NONE, NOTE(D,2), NOTE(D,3),
-      /* 10 */ NOTE(B,4), NOTE(Fs,4), NOTE(G,2), NOTE(Gs,2), NOTE(A,2),
-      /* 15 */ NOTE(E,3), NOTE(A,3), NOTE(Cs,2), NOTE(As,3), NOTE(Ds,3),
-      /* 20 */ NOTE(As,2), NOTE(B,3), NOTE(G,3), NOTE(C,4), NOTE(D,4),
-      /* 25 */ NOTE(F,2), NOTE(Cs,3), NOTE(C,3), NOTE(Ds,4), NOTE(E,4),
-      /* 30 */ NOTE(Cs,4), NOTE(F,4), NOTE(F,3), NOTE(Fs,2), NOTE(Gs,3),
-      /* 35 */ NOTE(F,2), NOTE(Fs,3), NOTE(Cs,2), NOTE(G,4), NOTE(B,2),
-    },
-  },
-};
+extern const uint8_t note_table[3][2][NUM_KEYS];
 
 /* Returns the layout/side name for wing_id, or NULL if wing_id is unknown. */
 static inline const char *wing_name(uint8_t wing_id)
@@ -92,5 +44,9 @@ static inline const char *wing_name(uint8_t wing_id)
     default: return NULL;
   }
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* KEYBOARD_LAYOUT_H_ */

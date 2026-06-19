@@ -27,13 +27,6 @@ init_build_release:
 build_release:
     cmake --build --preset Release
 
-# Init, build, and flash release version
-release: init_build_release build_release
-    name=$(basename $(pwd)) && \
-    ../registry/registry.py check "$name" && \
-    arm-none-eabi-objcopy -O binary build/Release/$name.elf build/Release/$name.bin && \
-    st-flash --reset write build/Release/$name.bin 0x08000000
-
 # Record this board's chip UID in the registry. Run once per board before the first flash.
 registry_add:
     ../registry/registry.py add $(basename $(pwd))
@@ -43,6 +36,9 @@ flash:
     ../registry/registry.py check "$name" && \
     arm-none-eabi-objcopy -O binary build/Debug/$name.elf build/Debug/$name.bin && \
     st-flash --reset write build/Debug/$name.bin 0x08000000
+
+# Init, build, and flash release version
+release: init_build_release build_release flash
 
 # Reset the board via STLink
 reset:

@@ -1,8 +1,7 @@
-#include "keyboard.h"
-
 #include <stdio.h>
 #include <string.h>
 
+extern "C" {
 #include "main.h"
 #include "spi_link.h"
 #include "hall_report.h"
@@ -13,6 +12,7 @@
 #include "properties.h"
 #include "report.h"
 #include "usb_app.h"
+#include "keyboard.h"
 
 /* SPI handles for the two wing links, defined by the CubeMX-generated main.c. */
 extern SPI_HandleTypeDef hspi1;
@@ -26,7 +26,51 @@ _Static_assert(SPI_LINK_NUM_KEYS == HALL_REPORT_NUM_KEYS,
  * back as it is released. key_release > key_press gives a dead band so a key
  * resting near the trip point doesn't chatter. See g_properties (properties.h). */
 
-typedef struct
+
+
+
+
+// Lock free producer consumer queue where only the latest
+// produced buffer is made available to the consumer.
+class TripleBuffer {
+
+  struct Buffer {
+    bool to_be_consumed = 0;
+    uint16_t data[SPI_LINK_FRAME_WORDS] {};
+  };
+
+  Buffer buffers[3] {};
+
+  // Invarient: At any time those 3 variables contains 0, 1 and 2 in any order.
+  uint8_t producer_idx = 0;
+  uint8_t shared_idx = 1;
+  uint8_t consumer_idx = 2;
+
+  public:
+    // Make the current producer available to the consumer.
+    void release_producer_buffer() {
+      // The producer buffer is assumed to be valid.
+      buffers[producer_idx].to_be_consumed = true;
+      __atomic_exchange(&shared_idx, &producer_idx, &producer_idx, __ATOMIC_RELEASE);
+    };
+
+    bool acquire_consumer_buffer() {
+      // This also releases a consumed buffer.
+      buffers[consumer_idx].to_be_consumed = false;
+      __atomic_exchange(&shared_idx, &consumer_idx, &consumer_idx, __ATOMIC_ACQUIRE);
+      return buffers[consumer_idx].to_be_consumed;
+    };
+
+    uint16_t* producer_buffer() {
+      return buffers[producer_idx].data;
+    }
+
+    uint16_t* consumer_buffer() {
+      return buffers[consumer_idx].data;
+    }
+};
+
+struct SPIBus
 {
   SPI_HandleTypeDef *hspi;
   const char *name;
@@ -34,12 +78,8 @@ typedef struct
   GPIO_TypeDef *nss_port;   /* NSS line, read to find the inter-frame gap */
   uint16_t nss_pin;
 
-  /* Double buffer: the ISR fills rx[rx_active]; on completion it flips and
-   * hands the finished buffer to the main loop via ready/ready_buf. */
-  uint16_t rx[2][SPI_LINK_FRAME_WORDS];
-  volatile uint8_t rx_active;
-  volatile uint8_t ready;
-  volatile uint8_t ready_buf;
+  TripleBuffer buffers;
+
   volatile uint8_t needs_resync;
 
   /* Per-reception outcome counters (updated in interrupt context). Every
@@ -79,9 +119,11 @@ typedef struct
   /* Separate good-count snapshot for the live (show_spi) dashboard, so its rate
    * is computed over the report interval without disturbing the 1 Hz log above. */
   uint32_t rep_last_good, rep_last_tick;
-} spi_bus_t;
+};
 
-static spi_bus_t g_bus[2];
+static SPIBus g_bus[2];
+// Increated in situation that should never happen.
+static uint16_t g_spi_bus_state_error = 0;
 
 /* Number of keys currently held down across both wing keyboards (key_pressed[k]),
  * regardless of bellows direction — i.e. the count of open pallets, including in
@@ -106,7 +148,7 @@ static bellows_t kbd_bellows(void)
   return buttons_table_mode() ? BELLOWS_PULL : bellow_direction();
 }
 
-static spi_bus_t *bus_from_hspi(SPI_HandleTypeDef *hspi)
+static SPIBus *bus_from_hspi(SPI_HandleTypeDef *hspi)
 {
   if (hspi == &hspi1) return &g_bus[0];
   if (hspi == &hspi2) return &g_bus[1];
@@ -114,60 +156,85 @@ static spi_bus_t *bus_from_hspi(SPI_HandleTypeDef *hspi)
 }
 
 
-/* Completion and error callbacks never re-arm directly: re-arming the instant a
- * frame ends lands the next receive mid-stream (the wing is still finishing /
- * NSS hasn't returned high), so it comes back word-misaligned. Instead they
- * classify/count the reception and flag needs_resync; the main loop re-arms on
- * the next NSS idle gap, which is the only point that reliably word-aligns.
+/* RxCplt and ErrorCallback re-arm immediately: by the time the callback fires,
+ * the frame (including CRC) is fully received, NSS is already high, and the wing
+ * has started its next hall scan. Safe to reset SPI state and re-arm DMA now.
+ * If re-arm fails, set needs_resync to retry from the main loop.
  *
- * RxCplt classifies here (not in the main loop) so every reception is counted
- * even when the loop is too slow to drain each one: a frame is "good" only if
- * word 0 is a known wing id, otherwise "misaligned" (dropped). Only good frames
- * are handed to the loop for decoding. */
+ * RxCplt classifies the frame (good/misaligned) before re-arming, so every
+ * reception is counted even if the loop can't drain all of them. Only good frames
+ * (word 0 is a known wing id) are handed to the consumer buffer for decode. */
+
+static void spi_drain_and_reset(SPI_HandleTypeDef *hspi)
+{
+  // Drain any leftover data from the RX FIFO and clear error flags to ensure
+  // a clean state before starting a new DMA transfer. Without this, stale bytes
+  // or a stuck overrun condition would corrupt the next frame.
+  __HAL_SPI_DISABLE(hspi);
+  while (__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_RXNE))
+    (void)hspi->Instance->DR;
+  __HAL_SPI_CLEAR_OVRFLAG(hspi);
+}
+
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
 {
-  spi_bus_t *b = bus_from_hspi(hspi);
-  if (!b) return;
-  uint16_t w0 = b->rx[b->rx_active][0];
-  if (wing_name((uint8_t)w0) != NULL)
+
+  if(__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_BSY)) {
+    // This should never happen.
+    // code/wing-g474/Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_spi.c
+    // SPI_DMAReceiveCplt is supposed to wait for SPI_EndRxTransaction.
+    g_spi_bus_state_error++;
+  }
+
+  SPIBus *bus = bus_from_hspi(hspi);
+  if (!bus) {
+    g_spi_bus_state_error++;
+    return;
+  }
+
+  uint16_t wing_id = bus->buffers.producer_buffer()[0];
+  if (wing_id <= UINT8_MAX && wing_name((uint8_t)wing_id) != NULL)
   {
-    b->rx_good++;
-    b->last_good_wing = (uint8_t)w0;
-    b->ready_buf = b->rx_active;
-    b->ready = 1;
+    bus->rx_good++;
+    bus->last_good_wing = (uint8_t)wing_id;
+    bus->buffers.release_producer_buffer();
   }
   else
   {
-    b->rx_misaligned++;
-    b->last_bad_word0 = w0;
+    // The wing identifier is corrupted.
+    bus->rx_misaligned++;
+    bus->last_bad_word0 = wing_id;
+
+    // Do not release a corrupted the buffer.
+    // That would replace the current shared buffer that
+    // may contain valid data.
   }
-  b->needs_resync = 1;
+
+  spi_drain_and_reset(bus->hspi);
+
+  if (HAL_SPI_Receive_DMA(bus->hspi, (uint8_t *)bus->buffers.producer_buffer(), SPI_LINK_FRAME_WORDS) != HAL_OK)
+    bus->needs_resync = 1;
 }
 
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
 {
-  spi_bus_t *b = bus_from_hspi(hspi);
+  SPIBus *b = bus_from_hspi(hspi);
   if (!b) return;
   uint32_t ec = hspi->ErrorCode;
   hspi->ErrorCode = HAL_SPI_ERROR_NONE;
   if (ec == HAL_SPI_ERROR_CRC) b->crc_err++;
   else                         b->bus_err++;
-  b->needs_resync = 1;
-}
 
-/* True if key k carries a note on wing_id in either bellows direction. Keys
- * that are NOTE_NONE in both directions aren't physical keys on this wing, so
- * their SPI channel is noise: never report or track them. */
-static int key_is_mapped(uint8_t wing_id, int k)
-{
-  return note_table[wing_id][BELLOWS_PULL][k] != NOTE_NONE ||
-         note_table[wing_id][BELLOWS_PUSH][k] != NOTE_NONE;
+  spi_drain_and_reset(b->hspi);
+
+  if (HAL_SPI_Receive_DMA(b->hspi, (uint8_t *)b->buffers.producer_buffer(), SPI_LINK_FRAME_WORDS) != HAL_OK)
+    b->needs_resync = 1;
 }
 
 /* Sends NOTE ON for key k on wing_id using the current bellows mapping, if
  * it isn't already sounding and that mapping has a note (it doesn't in
  * BELLOWS_NEUTRAL, where no air moves). No-op otherwise. */
-static void bus_note_on(spi_bus_t *b, uint8_t wing_id, int k)
+static void bus_note_on(SPIBus *b, uint8_t wing_id, int k)
 {
   if (b->sounding_note[k] != NOTE_NONE) return;
   bellows_t dir = kbd_bellows();
@@ -197,7 +264,7 @@ static void bus_note_on(spi_bus_t *b, uint8_t wing_id, int k)
 /* Sends NOTE OFF for key k on wing_id if it is currently sounding. No-op
  * otherwise (e.g. the key was pressed/released while in BELLOWS_NEUTRAL and
  * never sounded). */
-static void bus_note_off(spi_bus_t *b, uint8_t wing_id, int k)
+static void bus_note_off(SPIBus *b, uint8_t wing_id, int k)
 {
   if (b->sounding_note[k] == NOTE_NONE) return;
   printf("NOTE OFF %s wing=%u key=%2d note=%3u\r\n", b->name, wing_id, k, b->sounding_note[k]);
@@ -211,7 +278,7 @@ static void bus_note_off(spi_bus_t *b, uint8_t wing_id, int k)
  * since no air moves at rest. PUSH<->PULL never happens directly (NEUTRAL
  * sits between them), so this never has to swap one sounding note for
  * another. */
-static void bus_bellows_changed(spi_bus_t *b)
+static void bus_bellows_changed(SPIBus *b)
 {
   uint8_t wing_id = b->last_good_wing;
   for (int k = 0; k < SPI_LINK_NUM_KEYS; k++)
@@ -225,7 +292,7 @@ static void bus_bellows_changed(spi_bus_t *b)
  * ON/OFF via bus_note_on/bus_note_off. Channels whose since-boot minimum is
  * still 0 are treated as unpopulated and skipped, matching the wing's
  * present-key detection. */
-static void bus_process_frame(spi_bus_t *b, const uint16_t *frame)
+static void bus_process_frame(SPIBus *b, const uint16_t *frame)
 {
   uint8_t wing_id = (uint8_t)frame[0];
   const uint16_t *meas = &frame[1];
@@ -264,43 +331,30 @@ static void bus_process_frame(spi_bus_t *b, const uint16_t *frame)
   b->key_min_init = 1;
 }
 
-/* Decodes the latest good frame the ISR handed over (RxCplt only flags ready
- * for word-aligned frames with a valid wing id). */
-static void bus_poll(spi_bus_t *b)
+/* Decodes the latest good frame the ISR handed over. */
+static void bus_poll(SPIBus *b)
 {
-  if (!b->ready) return;
-  uint8_t idx = b->ready_buf;
-  b->ready = 0;
-  uint16_t frame[SPI_LINK_FRAME_WORDS];
-  memcpy(frame, b->rx[idx], sizeof(frame));
-  bus_process_frame(b, frame);
+  if (!b->buffers.acquire_consumer_buffer()) {
+    // No new data is available.
+    // TODO: increate counters.
+    return;
+  }
+
+  bus_process_frame(b, b->buffers.consumer_buffer());
 }
 
-/* Arms the next reception, aligned to a frame boundary. This is the only place
- * reception is (re)armed: after every completion/error the callbacks set
- * needs_resync and this runs from the main loop, arming only while NSS is idle
- * high (the inter-frame gap) so the transfer starts at word 0 of the next
- * frame. Throughput is therefore bounded by the loop rate, but every captured
- * frame is word-aligned. */
-static void bus_service_resync(spi_bus_t *b)
+/* Retries reception when HAL_SPI_Receive_DMA failed in the callback (rare).
+ * Polls NSS to avoid re-arming mid-frame, then attempts re-arm once per loop.
+ * If successful, clears needs_resync; remains set otherwise for next iteration. */
+static void bus_service_resync(SPIBus *b)
 {
   if (!b->needs_resync) return;
   if (HAL_GPIO_ReadPin(b->nss_port, b->nss_pin) == GPIO_PIN_RESET) return;
 
-  /* Reset the slave's bit framing and CRC for the next frame. A fresh 16-bit
-   * word count and SPI_RESET_CRC (which toggles CRCEN) only take effect across
-   * an SPE off->on transition (RM0440). If SPE just stays on between frames the
-   * slave free-runs its bit counter (frames come back bit-misaligned) and the
-   * CRC never resets (so it can't reject them). Drop SPE and flush any stale RX
-   * here; HAL_SPI_Receive_DMA turns SPE back on and resets the CRC. Safe because
-   * needs_resync is only set once a transfer has ended (state READY, DMA idle). */
-  __HAL_SPI_DISABLE(b->hspi);
-  while (__HAL_SPI_GET_FLAG(b->hspi, SPI_FLAG_RXNE))
-    (void)b->hspi->Instance->DR;
-  __HAL_SPI_CLEAR_OVRFLAG(b->hspi);
+  spi_drain_and_reset(b->hspi);
 
   if (HAL_GPIO_ReadPin(b->nss_port, b->nss_pin) == GPIO_PIN_RESET) return;
-  if (HAL_SPI_Receive_DMA(b->hspi, (uint8_t *)b->rx[b->rx_active], SPI_LINK_FRAME_WORDS) == HAL_OK)
+  if (HAL_SPI_Receive_DMA(b->hspi, (uint8_t *)b->buffers.producer_buffer(), SPI_LINK_FRAME_WORDS) == HAL_OK)
     b->needs_resync = 0;
 }
 
@@ -308,7 +362,7 @@ static void bus_service_resync(spi_bus_t *b)
  * misaligned/overrunning bus can't flood the console. "misaligned" means a
  * frame arrived whose word 0 wasn't a known wing id (1/2). */
 #define SPI_ERR_LOG_THROTTLE_MS 500
-static void bus_log_errors(spi_bus_t *b)
+static void bus_log_errors(SPIBus *b)
 {
   if (!g_properties->log_spi_stat) return;
   uint32_t mis = b->rx_misaligned, crc = b->crc_err, bus = b->bus_err;
@@ -329,7 +383,7 @@ static void bus_log_errors(spi_bus_t *b)
 
 /* 1 Hz per-bus reception rates. good + misaligned + crc-err + bus-err = total
  * receptions; "good" are the only ones decoded into notes. */
-static void bus_print_rates(spi_bus_t *b, uint32_t dt_ms)
+static void bus_print_rates(SPIBus *b, uint32_t dt_ms)
 {
   if (!g_properties->log_spi_stat) return;
   uint32_t good = b->rx_good, mis = b->rx_misaligned, crc = b->crc_err, bus = b->bus_err;
@@ -353,7 +407,7 @@ static void bus_print_rates(spi_bus_t *b, uint32_t dt_ms)
 
 /* One dashboard row per bus: running totals plus a good/s rate over the interval
  * since this bus' last report frame. */
-static void bus_report(spi_bus_t *b)
+static void bus_report(SPIBus *b)
 {
   uint32_t good = b->rx_good;
   uint32_t now = HAL_GetTick();
@@ -378,7 +432,7 @@ static void kbd_dash_emit(void *ctx, const char *line)
 /* One keyboard's live hall table (and, with show_keyboard_stats, its
  * min/max/diff/stddev tables), laid out exactly as the wing reports it: one row
  * per ADC, columns 0..n left-to-right in SPI-frame order. */
-static void bus_report_keyboard(spi_bus_t *b, bool show_stats)
+static void bus_report_keyboard(SPIBus *b, bool show_stats)
 {
   const char *wname = wing_name(b->last_good_wing);
   console_dash_println("%-6s keyboard (wing_id=%u %s)", b->name, b->last_good_wing,
@@ -402,8 +456,8 @@ void keyboard_init(void)
   g_bus[1].nss_port = R_SPI_NSS_GPIO_Port; g_bus[1].nss_pin = R_SPI_NSS_Pin;
   for (int i = 0; i < 2; i++)
   {
-    g_bus[i].rx_active = 0;
-    g_bus[i].needs_resync = 1;   /* armed by bus_service_resync() on the idle gap */
+    spi_drain_and_reset(g_bus[i].hspi);
+    g_bus[i].needs_resync = 1;
     hall_stats_init(&g_bus[i].hall);
   }
 }
@@ -483,3 +537,4 @@ void keyboard_print_rates(uint32_t dt_ms)
   for (int i = 0; i < 2; i++)
     bus_print_rates(&g_bus[i], dt_ms);
 }
+}  /* extern "C" */

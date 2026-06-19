@@ -141,7 +141,7 @@ PROPERTY(PROPERTY_TAG_NONE, bool, show_bellow,
          .default_value = 0,
          .description = "Live-report the bellows direction, intensity and hall readings")
 PROPERTY(PROPERTY_TAG_NONE, bool, show_spi,
-         .default_value = 0,
+         .default_value = 1,
          .description = "Live-report the per-wing SPI link reception counters and rates")
 PROPERTY(PROPERTY_TAG_NONE, uint16_t, show_keyboard,
          .default_value = 0, .min = 0, .max = 3,
