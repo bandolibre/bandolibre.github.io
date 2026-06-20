@@ -68,6 +68,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ../third_party/microrl/src
     ../common/console
     ../common/hall_report
+    ../common/spi_link
 )
 
 # Add project symbols (macros)

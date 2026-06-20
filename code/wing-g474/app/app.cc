@@ -7,6 +7,7 @@ extern "C" {
 #include "hall_report.h"
 #include "ansi.h"
 #include "app/app.h"
+#include "spi_link.h"
 
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
@@ -31,17 +32,28 @@ static uint8_t read_wing_id(void);
 // Number of hall sensor slots == number of physical keys on this wing.
 #define KEYBOARD_NUM_KEYS (HALL_NUM_ADC * HALL_SLOTS_PER_ADC)
 
+typedef struct {
+  uint16_t wing_id;
+  uint16_t sensors[HALL_NUM_ADC][HALL_SLOTS_PER_ADC];
+} Frame;
+
 // Layout matches the per-ADC DMA buffer: [adc][sel*HALL_NUM_RANK + rank]. This
 // is also exactly the flattened key order the SPI frame and hall_report use
-// (index = adc * HALL_SLOTS_PER_ADC + slot), so g_hall_data can be passed to
+// (index = adc * HALL_SLOTS_PER_ADC + slot), so Frame.sensors can be passed to
 // the shared report as a flat uint16_t[KEYBOARD_NUM_KEYS].
 _Static_assert(KEYBOARD_NUM_KEYS == HALL_REPORT_NUM_KEYS,
                "wing key count must match the shared hall report layout");
-static uint16_t g_hall_data[HALL_NUM_ADC][HALL_SLOTS_PER_ADC];
+_Static_assert(KEYBOARD_NUM_KEYS == SPI_LINK_NUM_KEYS,
+               "wing key count must match SPI link protocol");
+_Static_assert(sizeof(Frame) == SPI_LINK_FRAME_WORDS * sizeof(uint16_t),
+               "Frame struct size must match SPI link protocol frame size");
 static uint16_t g_hall_last_reported[HALL_NUM_ADC][HALL_SLOTS_PER_ADC];
 
 // Running per-key statistics, fed by hall_stats_update() every sweep.
 static hall_stats_t g_hall_stats;
+
+// Reusable frame for SPI transmission.
+static Frame g_frame;
 
 
 // The .ioc only sets the board layer (pins -> analog, DMA1_Ch1..5 -> ADC1..5,
@@ -83,11 +95,8 @@ static void hall_keyboard_scan(uint16_t hall_data[HALL_NUM_ADC][HALL_SLOTS_PER_A
       // hall_data, whose layout already matches the per-ADC buffer. Start_DMA
       // also issues the software trigger for sel 0. The circular buffer wraps
       // back to index 0 after exactly 8 transfers, i.e. at the end of the sweep.
-      size_t a = 0;
-      for (auto adc : adcs) {
-        HAL_ADC_Start_DMA(adc, (uint32_t *)hall_data[a], HALL_SLOTS_PER_ADC);
-        ++a;
-      }
+      for (int a = 0; a < 5; a++)
+        HAL_ADC_Start_DMA(adcs[a], (uint32_t *)hall_data[a], HALL_SLOTS_PER_ADC);
     }
     else
     {
@@ -101,6 +110,7 @@ static void hall_keyboard_scan(uint16_t hall_data[HALL_NUM_ADC][HALL_SLOTS_PER_A
     for (auto adc : adcs)
       while (READ_BIT(adc->Instance->CR, ADC_CR_ADSTART)) { }
   }
+
   for (auto adc : adcs)
     HAL_ADC_Stop_DMA(adc);
 
@@ -114,7 +124,7 @@ static void hall_keyboard_scan(uint16_t hall_data[HALL_NUM_ADC][HALL_SLOTS_PER_A
 
 // Reports hall_data slots that moved by at least HALL_DEAD_ZONE since the
 // last report.
-static void report_hall_changes(uint16_t hall_data[HALL_NUM_ADC][HALL_SLOTS_PER_ADC])
+static void report_hall_changes(const Frame *frame, uint16_t hall_data[HALL_NUM_ADC][HALL_SLOTS_PER_ADC])
 {
   for (int a = 0; a < HALL_NUM_ADC; a++)
     for (int s = 0; s < HALL_SLOTS_PER_ADC; s++)
@@ -131,6 +141,18 @@ static void report_hall_changes(uint16_t hall_data[HALL_NUM_ADC][HALL_SLOTS_PER_
         g_hall_last_reported[a][s] = cur;
       }
     }
+
+  static uint32_t last_tick = 0;
+  uint32_t now = HAL_GetTick();
+  if (now - last_tick >= 500)
+  {
+    last_tick = now;
+    const uint16_t *frame_ptr = (const uint16_t *)frame;
+    printf("SPI frame: wing=%u", (unsigned)frame_ptr[0]);
+    for (int i = 0; i < KEYBOARD_NUM_KEYS; i++)
+      printf(" %u", (unsigned)frame_ptr[1 + i]);
+    printf("\r\n");
+  }
 }
 
 // Builds and sends one full keyboard frame over the SPI link: word 0 is this
@@ -138,21 +160,16 @@ static void report_hall_changes(uint16_t hall_data[HALL_NUM_ADC][HALL_SLOTS_PER_
 // key in flattened order (adc * HALL_SLOTS_PER_ADC + slot). The frame carries
 // the full absolute keyboard state every cycle, so a dropped (CRC-failed)
 // frame just leaves the receiver at its previous state until the next arrives.
-static void keyboard_process(uint16_t hall_data[HALL_NUM_ADC][HALL_SLOTS_PER_ADC])
+static void transmit_keyboard_frame(Frame *frame)
 {
-  uint16_t frame[1 + KEYBOARD_NUM_KEYS];
-
-  frame[0] = read_wing_id();
-  for (int a = 0; a < HALL_NUM_ADC; a++)
-    for (int s = 0; s < HALL_SLOTS_PER_ADC; s++)
-      frame[1 + a * HALL_SLOTS_PER_ADC + s] = hall_data[a][s];
+  frame->wing_id = read_wing_id();
 
   uint32_t sr_before = hspi1.Instance->SR;
   uint32_t cr1_before = hspi1.Instance->CR1;
-  HAL_StatusTypeDef spi_status = HAL_SPI_Transmit(&hspi1, (uint8_t *)frame, 1 + KEYBOARD_NUM_KEYS, 500);
+  HAL_StatusTypeDef spi_status = HAL_SPI_Transmit(&hspi1, (uint8_t *)frame, SPI_LINK_FRAME_WORDS, 500);
   if (spi_status != HAL_OK)
     printf("SPI transmit failed: size=%u status=%d error=0x%lx SR_before=0x%lx CR1_before=0x%lx SR=0x%lx CR1=0x%lx\r\n",
-           (unsigned)(1 + KEYBOARD_NUM_KEYS), (int)spi_status, (unsigned long)hspi1.ErrorCode,
+           SPI_LINK_FRAME_WORDS, (int)spi_status, (unsigned long)hspi1.ErrorCode,
            (unsigned long)sr_before, (unsigned long)cr1_before,
            (unsigned long)hspi1.Instance->SR, (unsigned long)hspi1.Instance->CR1);
 
@@ -166,17 +183,6 @@ static void keyboard_process(uint16_t hall_data[HALL_NUM_ADC][HALL_SLOTS_PER_ADC
   // starts with the peripheral expecting to send a CRC instead of data. Clear
   // it explicitly so each frame starts from a known state.
   CLEAR_BIT(hspi1.Instance->CR1, SPI_CR1_CRCNEXT);
-
-  static uint32_t last_tick = 0;
-  uint32_t now = HAL_GetTick();
-  if (now - last_tick >= 500)
-  {
-    last_tick = now;
-    printf("SPI frame: wing=%u", (unsigned)frame[0]);
-    for (int i = 0; i < KEYBOARD_NUM_KEYS; i++)
-      printf(" %u", (unsigned)frame[1 + i]);
-    printf("\r\n");
-  }
 }
 
 // The wing id is strapped on fixed ID0..ID2 pins, so read it once on first
@@ -205,7 +211,7 @@ typedef struct {
 
 static volatile blink_state_t g_blink;
 
-// Toggled by the "show_keys" console command; main loop prints g_hall_data
+// Toggled by the "show_keys" console command; main loop prints hall sensor data
 // as a table at SHOW_KEYS_PERIOD_MS while set.
 #define SHOW_KEYS_PERIOD_MS 50
 static volatile int g_show_keys = 0;
@@ -280,40 +286,35 @@ extern "C" int console_execute(int argc, const char * const *argv)
 void main_init(void)
 {
   console_init(&huart1, USART1_IRQn);
-  printf("SPI1 init: APB2ENR=0x%lx CR1=0x%lx CR2=0x%lx SR=0x%lx\r\n",
-         (unsigned long)RCC->APB2ENR, (unsigned long)SPI1->CR1,
-         (unsigned long)SPI1->CR2, (unsigned long)SPI1->SR);
-
-  ADC_HandleTypeDef *const adcs[5] = { &hadc1, &hadc2, &hadc3, &hadc4, &hadc5 };
-  const uint32_t chA[5] = { ADC_CHANNEL_1, ADC_CHANNEL_3, ADC_CHANNEL_12, ADC_CHANNEL_4, ADC_CHANNEL_1 };
-  const uint32_t chB[5] = { ADC_CHANNEL_2, ADC_CHANNEL_4, ADC_CHANNEL_1,  ADC_CHANNEL_5, ADC_CHANNEL_2 };
 
   HAL_GPIO_WritePin(HALL_NEN_GPIO_Port, HALL_NEN_Pin, GPIO_PIN_RESET);
-  HAL_Delay(5);
-  size_t i = 0;
-  for (auto adc : adcs) {
-    adc_set_scan2(adc, chA[i], chB[i]);
-    ++i;
-  }
+  HAL_Delay(1);
+
+  adc_set_scan2(&hadc1, ADC_CHANNEL_1, ADC_CHANNEL_2);
+  adc_set_scan2(&hadc2, ADC_CHANNEL_3, ADC_CHANNEL_4);
+  adc_set_scan2(&hadc3, ADC_CHANNEL_12, ADC_CHANNEL_1);
+  adc_set_scan2(&hadc4, ADC_CHANNEL_4, ADC_CHANNEL_5);
+  adc_set_scan2(&hadc5, ADC_CHANNEL_1, ADC_CHANNEL_2);
 }
 
-void main_task(void)
+static void fn_button_task(void)
 {
   static uint8_t fn0_prev = 0xFF;
-  static uint32_t poll_count = 0;
-  static uint32_t last_poll_tick = 0;
-  static uint32_t last_stats_reset_tick = 0;
-
   uint8_t fn0 = HAL_GPIO_ReadPin(SW_FN0_GPIO_Port, SW_FN0_Pin) == GPIO_PIN_RESET ? 1 : 0;
   if (fn0 != fn0_prev)
   {
     fn0_prev = fn0;
     printf("FN0: %c\r\n", fn0 ? '1' : '0');
   }
+}
 
-  hall_keyboard_scan(g_hall_data);
-  hall_stats_update(&g_hall_stats, (const uint16_t *)g_hall_data);
-  keyboard_process(g_hall_data);
+static void reporting_task(Frame *frame)
+{
+  hall_stats_update(&g_hall_stats, (const uint16_t *)frame->sensors);
+
+  static uint32_t poll_count = 0;
+  static uint32_t last_poll_tick = 0;
+  static uint32_t last_stats_reset_tick = 0;
 
   poll_count++;
   uint32_t now = HAL_GetTick();
@@ -329,7 +330,7 @@ void main_task(void)
   {
     if (elapsed >= SHOW_KEYS_PERIOD_MS)
     {
-      print_hall_table(g_hall_data, poll_count * 1000u / elapsed);
+      print_hall_table(frame->sensors, poll_count * 1000u / elapsed);
       poll_count = 0;
       last_poll_tick = now;
     }
@@ -343,9 +344,18 @@ void main_task(void)
       poll_count = 0;
       last_poll_tick = now;
     }
-    report_hall_changes(g_hall_data);
+    report_hall_changes(frame, frame->sensors);
   }
+}
 
+void main_task(void)
+{
+  fn_button_task();
+
+  hall_keyboard_scan(g_frame.sensors);
+  transmit_keyboard_frame(&g_frame);
+  reporting_task(&g_frame);
+  
   console_poll();
   if (console_take_dirty()) console_redraw_prompt();
 }
