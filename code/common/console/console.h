@@ -12,8 +12,13 @@ extern microrl_t console_rl;
 // Set up microrl, route printf to huart, print banner, arm UART RX interrupt.
 void console_init(UART_HandleTypeDef *huart, IRQn_Type irqn);
 
-// Feed one received byte into microrl; re-arms the UART interrupt.
+// Feed one received byte into microrl. Called from thread context by
+// console_poll(); may also be called directly for testing.
 void console_rx_callback(uint8_t ch);
+
+// Drain any byte buffered by the UART RX ISR and feed it into microrl.
+// Call once per main-loop iteration, before console_take_dirty().
+void console_poll(void);
 
 // Read-and-clear the "async output happened" flag. Returns non-zero if any
 // output was written outside microrl's own line rendering since the last call.

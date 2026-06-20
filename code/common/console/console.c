@@ -8,6 +8,17 @@ microrl_t console_rl;
 static UART_HandleTypeDef *console_uart;
 static uint8_t console_rx_char;
 
+/* Small FIFO between the UART RX ISR and the main-loop processing.
+ * The ISR pushes bytes here; console_poll() drains them from thread context
+ * so that TX output (echo, history recall) never blocks inside an ISR.
+ * Size must be a power of 2 and large enough for the longest escape sequence
+ * the terminal can burst (arrow = 3 bytes, F1-F4 = 5 bytes → 8 is sufficient). */
+#define RX_FIFO_SIZE 8
+#define RX_FIFO_MASK (RX_FIFO_SIZE - 1)
+static volatile uint8_t  rx_fifo[RX_FIFO_SIZE];
+static volatile uint32_t rx_head; /* written by ISR  */
+static volatile uint32_t rx_tail; /* read  by poll() */
+
 /* >0 while microrl (or our own redraw) is rendering the line; output produced
  * in that window is the prompt/echo itself and must not mark the line dirty. */
 static volatile int console_internal_depth;
@@ -49,7 +60,16 @@ void console_rx_callback(uint8_t ch)
   console_internal_depth++;
   microrl_insert_char(&console_rl, ch);
   console_internal_depth--;
-  HAL_UART_Receive_IT(console_uart, &console_rx_char, 1);
+}
+
+void console_poll(void)
+{
+  while (rx_tail != rx_head)
+  {
+    uint8_t ch = rx_fifo[rx_tail & RX_FIFO_MASK];
+    rx_tail++;
+    console_rx_callback(ch);
+  }
 }
 
 int console_take_dirty(void)
@@ -153,7 +173,9 @@ void console_dash_hide(void)
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
   if (huart == console_uart) {
-    console_rx_callback(console_rx_char);
+    rx_fifo[rx_head & RX_FIFO_MASK] = console_rx_char;
+    rx_head++;
+    HAL_UART_Receive_IT(console_uart, &console_rx_char, 1);
   }
 }
 

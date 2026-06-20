@@ -275,7 +275,8 @@ int main(void)
      * region, or tears the dashboard down once no report is enabled). */
     report_end();
 
-    /* Restore the console prompt/input line if anything was printed above. */
+    /* Process any byte buffered by the UART RX ISR, then restore the prompt. */
+    console_poll();
     if (console_take_dirty()) console_redraw_prompt();
   }
   /* USER CODE END 3 */

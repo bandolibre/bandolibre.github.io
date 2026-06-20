@@ -465,7 +465,10 @@ int main(void)
         last_poll_tick = now;
       }
       report_hall_changes(g_hall_data);
-    } 
+    }
+
+    console_poll();
+    if (console_take_dirty()) console_redraw_prompt();
  }
   /* USER CODE END 3 */
 }

@@ -335,17 +335,18 @@ static void bus_process_frame(SPIBus *b, const uint16_t *frame)
 
 #define KEYBOARD_TIMEOUT_MS 500u
 
-/* Silences all notes on a bus: NOTE OFF for every sounding key, resets pressed
- * state (the wing's physical state is unknown while unresponsive), and sends
- * All Notes Off so the host clears anything we lost track of. */
+/* Silences all notes on a bus: NOTE OFF for every sounding key, then resets
+ * pressed state (the wing's physical state is unknown while unresponsive). */
 static void bus_silence(SPIBus *b)
 {
   for (int k = 0; k < SPI_LINK_NUM_KEYS; k++) {
-    b->sounding_note[k] = NOTE_NONE;
+    if (b->sounding_note[k] != NOTE_NONE) {
+      usb_app_midi_note_off(b->midi_ch, b->sounding_note[k]);
+      b->sounding_note[k] = NOTE_NONE;
+    }
     b->key_pressed[k] = 0;
   }
   b->mapped_keys_pressed = 0;
-  usb_app_midi_all_notes_off(b->midi_ch);
 }
 
 /* Decodes the latest good frame the ISR handed over, and fires a silence event
@@ -507,15 +508,6 @@ void keyboard_poll(void)
   {
     last_bellows = bellows;
     keyboard_bellows_changed();
-    /* Reaching rest stops all sound: bus_bellows_changed() already sent NOTE
-     * OFF for every note we believe is sounding, but follow with an All Notes
-     * Off (CC 123) on each keyboard's channel once, so a host also clears any
-     * note we lost track of (e.g. a NOTE OFF dropped on the lossy SPI link). */
-    if (bellows == BELLOWS_NEUTRAL)
-    {
-      usb_app_midi_all_notes_off(L_MIDI_CH);
-      usb_app_midi_all_notes_off(R_MIDI_CH);
-    }
   }
 
   /* Rebase the dashboard rate snapshots when the report is (re-)enabled so the

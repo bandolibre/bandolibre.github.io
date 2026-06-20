@@ -35,9 +35,6 @@ void usb_app_midi_note_off(uint8_t channel, uint8_t note);
 /* Sends a Control Change on the given 0-based MIDI channel (cable 0). */
 void usb_app_midi_control_change(uint8_t channel, uint8_t controller, uint8_t value);
 
-/* Sends All Notes Off (CC 123, value 0) on the given 0-based MIDI channel. */
-void usb_app_midi_all_notes_off(uint8_t channel);
-
 /* Sends a single Active Sensing real-time byte (0xFE) on cable 0. */
 void usb_app_midi_active_sensing(void);
 
