@@ -119,6 +119,11 @@ struct SPIBus
   /* Separate good-count snapshot for the live (show_spi) dashboard, so its rate
    * is computed over the report interval without disturbing the 1 Hz log above. */
   uint32_t rep_last_good, rep_last_tick;
+
+  /* Silence-on-timeout: last tick a good frame was decoded in the main loop, and
+   * a flag so the silence action fires exactly once per gap (re-armed on recovery). */
+  uint32_t last_good_frame_tick;
+  bool     timed_out;
 };
 
 static SPIBus g_bus[2];
@@ -328,16 +333,38 @@ static void bus_process_frame(SPIBus *b, const uint16_t *frame)
   }
 }
 
-/* Decodes the latest good frame the ISR handed over. */
+#define KEYBOARD_TIMEOUT_MS 500u
+
+/* Silences all notes on a bus: NOTE OFF for every sounding key, resets pressed
+ * state (the wing's physical state is unknown while unresponsive), and sends
+ * All Notes Off so the host clears anything we lost track of. */
+static void bus_silence(SPIBus *b)
+{
+  for (int k = 0; k < SPI_LINK_NUM_KEYS; k++) {
+    b->sounding_note[k] = NOTE_NONE;
+    b->key_pressed[k] = 0;
+  }
+  b->mapped_keys_pressed = 0;
+  usb_app_midi_all_notes_off(b->midi_ch);
+}
+
+/* Decodes the latest good frame the ISR handed over, and fires a silence event
+ * if no good frame has arrived for KEYBOARD_TIMEOUT_MS. */
 static void bus_poll(SPIBus *b)
 {
-  if (!b->buffers.acquire_consumer_buffer()) {
-    // No new data is available.
-    // TODO: increate counters.
-    return;
+  if (b->buffers.acquire_consumer_buffer()) {
+    b->last_good_frame_tick = HAL_GetTick();
+    if (b->timed_out) {
+      b->timed_out = false;
+      printf("KEYBOARD RECOVERED %s\r\n", b->name);
+    }
+    bus_process_frame(b, b->buffers.consumer_buffer());
+  } else if (!b->timed_out && HAL_GetTick() - b->last_good_frame_tick >= KEYBOARD_TIMEOUT_MS) {
+    b->timed_out = true;
+    printf("KEYBOARD TIMEOUT %s: no frame for %u ms, silencing all notes\r\n",
+           b->name, KEYBOARD_TIMEOUT_MS);
+    bus_silence(b);
   }
-
-  bus_process_frame(b, b->buffers.consumer_buffer());
 }
 
 /* Retries reception when HAL_SPI_Receive_DMA failed in the callback (rare).
@@ -451,6 +478,7 @@ void keyboard_init(void)
   g_bus[0].nss_port = L_SPI_NSS_GPIO_Port; g_bus[0].nss_pin = L_SPI_NSS_Pin;
   g_bus[1].hspi = &hspi2; g_bus[1].name = "SPI2/R"; g_bus[1].midi_ch = R_MIDI_CH;
   g_bus[1].nss_port = R_SPI_NSS_GPIO_Port; g_bus[1].nss_pin = R_SPI_NSS_Pin;
+  uint32_t now = HAL_GetTick();
   for (int i = 0; i < 2; i++)
   {
     spi_drain_and_reset(g_bus[i].hspi);
@@ -458,6 +486,8 @@ void keyboard_init(void)
     for (int k = 0; k < SPI_LINK_NUM_KEYS; k++)
       g_bus[i].key_min[k] = UINT16_MAX;
     hall_stats_init(&g_bus[i].hall);
+    g_bus[i].last_good_frame_tick = now;
+    g_bus[i].timed_out = false;
   }
 }
 
@@ -483,8 +513,8 @@ void keyboard_poll(void)
      * note we lost track of (e.g. a NOTE OFF dropped on the lossy SPI link). */
     if (bellows == BELLOWS_NEUTRAL)
     {
-      usb_app_midi_control_change(L_MIDI_CH, 123, 0);
-      usb_app_midi_control_change(R_MIDI_CH, 123, 0);
+      usb_app_midi_all_notes_off(L_MIDI_CH);
+      usb_app_midi_all_notes_off(R_MIDI_CH);
     }
   }
 

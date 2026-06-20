@@ -66,6 +66,11 @@ void usb_app_midi_control_change(uint8_t channel, uint8_t controller, uint8_t va
   tud_midi_stream_write(cable, msg, 3);
 }
 
+void usb_app_midi_all_notes_off(uint8_t channel)
+{
+  usb_app_midi_control_change(channel, 123, 0);
+}
+
 void usb_app_midi_active_sensing(void)
 {
   uint8_t const cable = 0;
