@@ -7,7 +7,7 @@
 
 set -u
 
-CLIENT="${1:-Bandoneo}"
+CLIENT="${1:-L\'Atelier du Bandonéon Libre}"
 POLL_INTERVAL="${POLL_INTERVAL:-0.5}"
 
 # Print the ALSA port (e.g. "20:0") for the named client, empty if absent.
