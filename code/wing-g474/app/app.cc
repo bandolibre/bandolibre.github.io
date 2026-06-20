@@ -55,6 +55,29 @@ static hall_stats_t g_hall_stats;
 // Reusable frame for SPI transmission.
 static Frame g_frame;
 
+typedef struct {
+  GPIO_TypeDef *port;
+  uint16_t pin;
+  int remaining;
+  uint32_t last_tick;
+  int led_on;
+} blink_state_t;
+
+static volatile blink_state_t g_blink;
+
+// Toggled by the "show_keys" console command; main loop prints hall sensor data
+// as a table at SHOW_KEYS_PERIOD_MS while set.
+#define SHOW_KEYS_PERIOD_MS 50
+static volatile int g_show_keys = 0;
+
+// Toggled by the "show_stats" console command; adds min/max/stddev tables
+// below the live readings while g_show_keys is also set.
+static volatile int g_show_stats = 0;
+
+// Resets the stddev window every STATS_RESET_PERIOD_MS so stddev reflects only
+// the last window; min/max are left untouched (see hall_stats_reset_window).
+#define STATS_RESET_PERIOD_MS 3000
+
 
 // The .ioc only sets the board layer (pins -> analog, DMA1_Ch1..5 -> ADC1..5,
 // circular periph->mem halfword, MINC, NVIC). It leaves each ADC in single-
@@ -117,10 +140,6 @@ static void hall_keyboard_scan(uint16_t hall_data[HALL_NUM_ADC][HALL_SLOTS_PER_A
   // DMA wrote straight into hall_data in its [adc][sel*rank + rank] layout,
   // so no de-interleave step is needed.
 }
-
-// Resets the stddev window every STATS_RESET_PERIOD_MS so stddev reflects only
-// the last window; min/max are left untouched (see hall_stats_reset_window).
-#define STATS_RESET_PERIOD_MS 3000
 
 // Reports hall_data slots that moved by at least HALL_DEAD_ZONE since the
 // last report.
@@ -200,25 +219,6 @@ static uint8_t read_wing_id(void)
   }
   return id;
 }
-
-typedef struct {
-  GPIO_TypeDef *port;
-  uint16_t pin;
-  int remaining;
-  uint32_t last_tick;
-  int led_on;
-} blink_state_t;
-
-static volatile blink_state_t g_blink;
-
-// Toggled by the "show_keys" console command; main loop prints hall sensor data
-// as a table at SHOW_KEYS_PERIOD_MS while set.
-#define SHOW_KEYS_PERIOD_MS 50
-static volatile int g_show_keys = 0;
-
-// Toggled by the "show_stats" console command; adds min/max/stddev tables
-// below the live readings while g_show_keys is also set.
-static volatile int g_show_stats = 0;
 
 // Emits one shared-report line as a console row: print it, clear to end of line
 // (so a shorter row doesn't leave stale characters from the previous frame) and
@@ -355,7 +355,7 @@ void main_task(void)
   hall_keyboard_scan(g_frame.sensors);
   transmit_keyboard_frame(&g_frame);
   reporting_task(&g_frame);
-  
+
   console_poll();
   if (console_take_dirty()) console_redraw_prompt();
 }

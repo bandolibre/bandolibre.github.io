@@ -1,3 +1,4 @@
+#include "config.h"
 #include "console.h"
 #include "ansi.h"
 #include <stdarg.h>
@@ -183,7 +184,7 @@ void console_init(UART_HandleTypeDef *huart, IRQn_Type irqn)
 {
   console_uart = huart;
 
-  printf("\r\n=== Bandoneo Console ===\r\n");
+  printf("\r\n=== Bandonéo Console ===\r\n");
   fflush(stdout);
 
   if (!NVIC_GetEnableIRQ(irqn)) {
