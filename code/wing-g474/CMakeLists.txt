@@ -28,8 +28,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 project(${CMAKE_PROJECT_NAME})
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
-# Enable CMake support for ASM and C languages
-enable_language(C ASM)
+# Enable CMake support for ASM, C, and CXX languages
+enable_language(C CXX ASM)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME})
@@ -45,6 +48,7 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
+    app/app.cc
     ../third_party/microrl/src/microrl.c
     ../common/console/console.c
     ../common/hall_report/hall_report.c
@@ -60,6 +64,7 @@ set_source_files_properties(
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
+    .
     ../third_party/microrl/src
     ../common/console
     ../common/hall_report
