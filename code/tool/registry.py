@@ -14,14 +14,18 @@ UID_ADDR = 0x1FFF7590
 UID_LEN = 12
 
 
-def read_uid() -> str:
+def read_uid(serial: str | None = None) -> str:
+    cmd = ["st-flash"]
+    if serial:
+        cmd += ["--serial", serial]
     with tempfile.NamedTemporaryFile() as f:
         result = subprocess.run(
-            ["st-flash", "read", f.name, hex(UID_ADDR), str(UID_LEN)],
+            cmd + ["read", f.name, hex(UID_ADDR), str(UID_LEN)],
             capture_output=True,
         )
         if result.returncode != 0:
-            print("Error: could not read from chip. Is the board connected and powered?", file=sys.stderr)
+            label = f"ST-Link {serial}" if serial else "connected board"
+            print(f"Error: could not read from {label}. Is the board connected and powered?", file=sys.stderr)
             sys.exit(1)
         return Path(f.name).read_bytes().hex()
 

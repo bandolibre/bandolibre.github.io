@@ -29,13 +29,12 @@ build_release:
 
 # Record this board's chip UID in the registry. Run once per board before the first flash.
 registry_add:
-    ../registry/registry.py add $(basename $(pwd))
+    ../tool/registry.py add $(basename $(pwd))
 
 flash:
     name=$(basename $(pwd)) && \
-    ../registry/registry.py check "$name" && \
     arm-none-eabi-objcopy -O binary build/Debug/$name.elf build/Debug/$name.bin && \
-    st-flash --reset write build/Debug/$name.bin 0x08000000
+    ../tool/flash.py "$name" build/Debug/$name.bin
 
 # Init, build, and flash release version
 release: init_build_release build_release flash
