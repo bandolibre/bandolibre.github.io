@@ -63,8 +63,7 @@ void main_task(void)
   buttons_poll();
   pedals_poll();
   report_end();
-  console_poll();
-  if (console_take_dirty()) console_redraw_prompt();
+  console_task();
 }
 
 void main_init(void)

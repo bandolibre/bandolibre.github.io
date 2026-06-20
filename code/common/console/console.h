@@ -13,21 +13,16 @@ extern microrl_t console_rl;
 void console_init(UART_HandleTypeDef *huart, IRQn_Type irqn);
 
 // Feed one received byte into microrl. Called from thread context by
-// console_poll(); may also be called directly for testing.
+// console_task(); may also be called directly for testing.
 void console_rx_callback(uint8_t ch);
 
-// Drain any byte buffered by the UART RX ISR and feed it into microrl.
-// Call once per main-loop iteration, before console_take_dirty().
-void console_poll(void);
-
-// Read-and-clear the "async output happened" flag. Returns non-zero if any
-// output was written outside microrl's own line rendering since the last call.
-int console_take_dirty(void);
+// Drain any byte buffered by the UART RX ISR, feed it into microrl, and
+// redraw the prompt if any async output landed since the last call.
+// Call once per main-loop iteration.
+void console_task(void);
 
 // Reprint the prompt and current input line, restoring the cursor. Assumes the
-// cursor is at column 0 of a fresh line (async prints end with \r\n). Pair with
-// console_take_dirty() at the bottom of the main loop to restore the prompt
-// after asynchronous output.
+// cursor is at column 0 of a fresh line (async prints end with \r\n).
 void console_redraw_prompt(void);
 
 // ===== Live-metrics dashboard ============================================== //

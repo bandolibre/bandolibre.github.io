@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 extern "C" {
 #include "main.h"
 #include "console.h"
 #include "hall_report.h"
-#include "ansi.h"
 #include "app/app.h"
 #include "spi_link.h"
 
@@ -47,7 +47,6 @@ _Static_assert(KEYBOARD_NUM_KEYS == SPI_LINK_NUM_KEYS,
                "wing key count must match SPI link protocol");
 _Static_assert(sizeof(Frame) == SPI_LINK_FRAME_WORDS * sizeof(uint16_t),
                "Frame struct size must match SPI link protocol frame size");
-static uint16_t g_hall_last_reported[HALL_NUM_ADC][HALL_SLOTS_PER_ADC];
 
 // Running per-key statistics, fed by hall_stats_update() every sweep.
 static hall_stats_t g_hall_stats;
@@ -65,18 +64,16 @@ typedef struct {
 
 static volatile blink_state_t g_blink;
 
-// Toggled by the "show_keys" console command; main loop prints hall sensor data
-// as a table at SHOW_KEYS_PERIOD_MS while set.
-#define SHOW_KEYS_PERIOD_MS 50
+#define BLINK_HALF_PERIOD_MS  200
+
+// Live-report period in ms; written by the "rate" command, read by reporting_task.
+// Default 4 Hz (250 ms). Clamped to [33, 10000] ms (0.1–30 Hz) on write.
+static volatile uint32_t g_report_period_ms = 250;
 static volatile int g_show_keys = 0;
 
 // Toggled by the "show_stats" console command; adds min/max/stddev tables
 // below the live readings while g_show_keys is also set.
 static volatile int g_show_stats = 0;
-
-// Resets the stddev window every STATS_RESET_PERIOD_MS so stddev reflects only
-// the last window; min/max are left untouched (see hall_stats_reset_window).
-#define STATS_RESET_PERIOD_MS 3000
 
 
 // The .ioc only sets the board layer (pins -> analog, DMA1_Ch1..5 -> ADC1..5,
@@ -141,38 +138,6 @@ static void hall_keyboard_scan(uint16_t hall_data[HALL_NUM_ADC][HALL_SLOTS_PER_A
   // so no de-interleave step is needed.
 }
 
-// Reports hall_data slots that moved by at least HALL_DEAD_ZONE since the
-// last report.
-static void report_hall_changes(const Frame *frame, uint16_t hall_data[HALL_NUM_ADC][HALL_SLOTS_PER_ADC])
-{
-  for (int a = 0; a < HALL_NUM_ADC; a++)
-    for (int s = 0; s < HALL_SLOTS_PER_ADC; s++)
-    {
-      uint16_t cur  = hall_data[a][s];
-      uint16_t last = g_hall_last_reported[a][s];
-      int delta = (int)cur - (int)last;
-      if (delta < 0) delta = -delta;
-      if (last && delta >= HALL_DEAD_ZONE)
-      {
-        printf(" > dma scan    :  adc=%d sel=%d rank=%d: %4u -> %4u\r\n",
-               a, s / HALL_NUM_RANK, s % HALL_NUM_RANK,
-               (unsigned)last, (unsigned)cur);
-        g_hall_last_reported[a][s] = cur;
-      }
-    }
-
-  static uint32_t last_tick = 0;
-  uint32_t now = HAL_GetTick();
-  if (now - last_tick >= 500)
-  {
-    last_tick = now;
-    const uint16_t *frame_ptr = (const uint16_t *)frame;
-    printf("SPI frame: wing=%u", (unsigned)frame_ptr[0]);
-    for (int i = 0; i < KEYBOARD_NUM_KEYS; i++)
-      printf(" %u", (unsigned)frame_ptr[1 + i]);
-    printf("\r\n");
-  }
-}
 
 // Builds and sends one full keyboard frame over the SPI link: word 0 is this
 // wing's id, words 1..KEYBOARD_NUM_KEYS are the raw hall measurement for each
@@ -220,39 +185,42 @@ static uint8_t read_wing_id(void)
   return id;
 }
 
-// Emits one shared-report line as a console row: print it, clear to end of line
-// (so a shorter row doesn't leave stale characters from the previous frame) and
-// advance to the next line.
+// Emits one shared-report line as a dashboard row.
 static void hall_report_emit(void *ctx, const char *line)
 {
   (void)ctx;
-  printf("%s" ANSI_CLEAR_LINE_END "\r\n", line);
+  console_dash_println("%s", line);
 }
 
-static void print_hall_table(uint16_t hall_data[HALL_NUM_ADC][HALL_SLOTS_PER_ADC], uint32_t scan_freq_hz)
+
+static const char *const g_cmds[] = { "blink", "key", "stat", "rate", "reset", "help", NULL };
+static const char *const g_blink_leds[] = { "fn0", "ready", NULL };
+
+extern "C" char **console_complete(int argc, const char * const *argv)
 {
-  // Save the cursor (sitting in the prompt line), hide it while redrawing the
-  // table in place at the top of the screen (avoids it visibly jumping
-  // through the table), then restore position and visibility so the prompt
-  // and any partially-typed command are undisturbed.
-  printf(ANSI_CURSOR_SAVE ANSI_CURSOR_HIDE ANSI_CURSOR_HOME);
-  printf("scan freq   : %6lu Hz" ANSI_CLEAR_LINE_END "\r\n", (unsigned long)scan_freq_hz);
+  static const char *result[8];
+  const char *const *pool;
+  const char *prefix;
 
-  hall_report_keys((const uint16_t *)hall_data, hall_report_emit, NULL);
-  if (g_show_stats)
-    hall_report_stats(&g_hall_stats, NULL, hall_report_emit, NULL);
+  if (argc <= 1)       { pool = g_cmds;       prefix = argc == 1 ? argv[0] : ""; }
+  else if (strcmp(argv[0], "blink") == 0 && argc == 2)
+                       { pool = g_blink_leds;  prefix = argv[1]; }
+  else return NULL;
 
-  printf(ANSI_CURSOR_RESTORE ANSI_CURSOR_SHOW);
+  int n = 0;
+  size_t plen = strlen(prefix);
+  for (int i = 0; pool[i] && n < 7; i++)
+    if (strncmp(pool[i], prefix, plen) == 0)
+      result[n++] = pool[i];
+  result[n] = NULL;
+  return n ? (char **)result : NULL;
 }
-
 
 extern "C" int console_execute(int argc, const char * const *argv)
 {
   if (argc == 0)
     return 0;
-  if (strcmp(argv[0], "hello") == 0)
-    printf("Hello from Wing %u!\r\n", read_wing_id());
-  else if (strcmp(argv[0], "blink") == 0 && argc >= 2)
+  if (strcmp(argv[0], "blink") == 0 && argc >= 2)
   {
     GPIO_TypeDef *port = NULL;
     uint16_t pin = 0;
@@ -278,8 +246,44 @@ extern "C" int console_execute(int argc, const char * const *argv)
     g_show_stats = !g_show_stats;
     printf("show_stats: %s\r\n", g_show_stats ? "on" : "off");
   }
+  else if (strcmp(argv[0], "reset") == 0)
+  {
+    hall_stats_init(&g_hall_stats);
+    printf("stats reset\r\n");
+  }
+  else if (strcmp(argv[0], "rate") == 0 && argc >= 2)
+  {
+    char *end;
+    float hz = strtof(argv[1], &end);
+    if (end == argv[1] || hz <= 0.0f)
+    {
+      printf("usage: rate <hz>  (e.g. rate 4, rate 0.5)\r\n");
+    }
+    else
+    {
+      uint32_t period = (uint32_t)(1000.0f / hz + 0.5f);
+      if (period <    33) period =    33;   /* 30 Hz max */
+      if (period > 10000) period = 10000;   /* 0.1 Hz min */
+      g_report_period_ms = period;
+      uint32_t hz_int  = 1000000u / period;
+      uint32_t hz_frac = hz_int % 1000u;
+      hz_int /= 1000u;
+      printf("rate: %lu.%03lu Hz (period %lu ms)\r\n",
+             (unsigned long)hz_int, (unsigned long)hz_frac, (unsigned long)period);
+    }
+  }
+  else if (strcmp(argv[0], "help") == 0)
+  {
+    printf("blink fn0     blink FN0 LED 5 times\r\n");
+    printf("blink ready   blink READY LED 5 times\r\n");
+    printf("key           toggle hall sensor table\r\n");
+    printf("stat          toggle min/max/stddev stats (requires key)\r\n");
+    printf("rate <hz>     set live report rate (e.g. rate 4, rate 0.5)\r\n");
+    printf("reset         reset hall stats (min/max/stddev)\r\n");
+    printf("help          this message\r\n");
+  }
   else
-    printf("Unknown command: %s\r\n", argv[0]);
+    printf("Unknown command: %s (try help)\r\n", argv[0]);
   return 0;
 }
 
@@ -297,9 +301,24 @@ void main_init(void)
   adc_set_scan2(&hadc5, ADC_CHANNEL_1, ADC_CHANNEL_2);
 }
 
+static void blink_task(void)
+{
+  if (!g_blink.remaining || !g_blink.port)
+    return;
+  uint32_t now = HAL_GetTick();
+  if (now - g_blink.last_tick < BLINK_HALF_PERIOD_MS)
+    return;
+  g_blink.last_tick = now;
+  g_blink.led_on = !g_blink.led_on;
+  HAL_GPIO_WritePin(g_blink.port, g_blink.pin,
+                    g_blink.led_on ? GPIO_PIN_SET : GPIO_PIN_RESET);
+  if (!g_blink.led_on)
+    g_blink.remaining--;
+}
+
 static void fn_button_task(void)
 {
-  static uint8_t fn0_prev = 0xFF;
+  static uint8_t fn0_prev = 0;
   uint8_t fn0 = HAL_GPIO_ReadPin(SW_FN0_GPIO_Port, SW_FN0_Pin) == GPIO_PIN_RESET ? 1 : 0;
   if (fn0 != fn0_prev)
   {
@@ -314,48 +333,39 @@ static void reporting_task(Frame *frame)
 
   static uint32_t poll_count = 0;
   static uint32_t last_poll_tick = 0;
-  static uint32_t last_stats_reset_tick = 0;
 
   poll_count++;
   uint32_t now = HAL_GetTick();
   uint32_t elapsed = now - last_poll_tick;
 
-  if (now - last_stats_reset_tick >= STATS_RESET_PERIOD_MS)
-  {
-    hall_stats_reset_window(&g_hall_stats);
-    last_stats_reset_tick = now;
-  }
+  uint32_t period = g_report_period_ms;
+  if (elapsed < period)
+    return;
 
+  uint32_t scan_freq_hz = poll_count * 1000u / elapsed;
+  poll_count = 0;
+  last_poll_tick = now;
+
+  console_dash_begin();
+  console_dash_println("wing_id=%u   scan rate %6lu Hz", (unsigned)frame->wing_id, (unsigned long)scan_freq_hz);
   if (g_show_keys)
   {
-    if (elapsed >= SHOW_KEYS_PERIOD_MS)
-    {
-      print_hall_table(frame->sensors, poll_count * 1000u / elapsed);
-      poll_count = 0;
-      last_poll_tick = now;
-    }
+    hall_report_keys((const uint16_t *)frame->sensors, hall_report_emit, NULL);
+    if (g_show_stats)
+      hall_report_stats(&g_hall_stats, NULL, hall_report_emit, NULL);
   }
-  else
-  {
-    if (elapsed >= 1000)
-    {
-      printf("poll freq   : %6lu Hz\r\n",
-             (unsigned long)(poll_count * 1000u / elapsed));
-      poll_count = 0;
-      last_poll_tick = now;
-    }
-    report_hall_changes(frame, frame->sensors);
-  }
+  hall_stats_reset_window(&g_hall_stats);
+  console_dash_end(1000u / period);
 }
 
 void main_task(void)
 {
+  blink_task();
   fn_button_task();
 
   hall_keyboard_scan(g_frame.sensors);
   transmit_keyboard_frame(&g_frame);
   reporting_task(&g_frame);
 
-  console_poll();
-  if (console_take_dirty()) console_redraw_prompt();
+  console_task();
 }

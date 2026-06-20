@@ -63,7 +63,7 @@ void console_rx_callback(uint8_t ch)
   console_internal_depth--;
 }
 
-void console_poll(void)
+void console_task(void)
 {
   while (rx_tail != rx_head)
   {
@@ -71,15 +71,11 @@ void console_poll(void)
     rx_tail++;
     console_rx_callback(ch);
   }
-}
-
-int console_take_dirty(void)
-{
   __disable_irq();
-  int d = console_dirty;
+  int dirty = console_dirty;
   console_dirty = 0;
   __enable_irq();
-  return d;
+  if (dirty) console_redraw_prompt();
 }
 
 void console_redraw_prompt(void)
