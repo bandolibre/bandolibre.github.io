@@ -35,6 +35,7 @@
 #include "properties.h"
 #include "properties_console.h"
 #include "app/midi.h"
+#include "app/app.h"
 
 /* USER CODE END Includes */
 
@@ -89,38 +90,6 @@ static void MX_USB_PCD_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-/* One-time boot summary: bus clocks, USB link, and RAM headroom. Static RAM
- * usage is fixed at link time; the heap budget is the gap between _end and the
- * MSP stack reservation below _estack (the layout _sbrk in sysmem.c relies on).
- * The host has usually not enumerated us yet this early in boot. */
-static void print_startup_info(void)
-{
-  extern uint8_t _end;             /* first heap byte (end of .bss) */
-  extern uint8_t _estack;          /* top of RAM */
-  extern uint32_t _Min_Stack_Size; /* MSP stack reserved below _estack */
-
-  const uint32_t ram_base = 0x20000000UL;
-  const uint32_t ram_total = (uint32_t)&_estack - ram_base;
-  const uint32_t stack_resv = (uint32_t)&_Min_Stack_Size;
-  const uint32_t static_use = (uint32_t)&_end - ram_base;
-  const uint32_t heap_free = (uint32_t)&_estack - stack_resv - (uint32_t)&_end;
-
-  printf("\r\n=== Bandoneo main ===\r\n");
-  printf("Clocks: SYSCLK %lu MHz, HCLK %lu MHz, PCLK1 %lu MHz, PCLK2 %lu MHz\r\n",
-         (unsigned long)(HAL_RCC_GetSysClockFreq() / 1000000UL),
-         (unsigned long)(HAL_RCC_GetHCLKFreq() / 1000000UL),
-         (unsigned long)(HAL_RCC_GetPCLK1Freq() / 1000000UL),
-         (unsigned long)(HAL_RCC_GetPCLK2Freq() / 1000000UL));
-  printf("USB: %lu MHz kernel clock, %s\r\n",
-         (unsigned long)(HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_USB) / 1000000UL),
-         usb_app_mounted() ? "enumerated" : "not yet enumerated");
-  printf("RAM: %lu KiB total, %lu B static, %lu B stack reserved, %lu B heap free\r\n",
-         (unsigned long)(ram_total / 1024UL),
-         (unsigned long)static_use,
-         (unsigned long)stack_resv,
-         (unsigned long)heap_free);
-}
 
 int console_execute(int argc, const char * const *argv)
 {
@@ -226,58 +195,17 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USB_PCD_Init();
   /* USER CODE BEGIN 2 */
-  CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
-  DWT->CYCCNT = 0;
-  DWT->CTRL  |= DWT_CTRL_CYCCNTENA_Msk;
-  console_init(&huart1, USART1_IRQn);
-  usb_app_init();
-  keyboard_init();
-  print_startup_info();
+  main_init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  uint32_t last_rate_tick = HAL_GetTick();
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    /* Open a live-metrics dashboard frame if one is due; each *_poll() below
-     * renders its enabled show_* section into it, closed by report_end() after
-     * the polls. */
-    report_begin();
-
-    usb_app_task();
-
-    midi_poll();
-
-    bellow_poll();
-
-    /* Decode any wing frames received since the last iteration, recover any bus
-     * that lost alignment, then surface link errors (throttled) and a 1 Hz
-     * frame/error rate per bus. */
-    keyboard_poll();
-
-    uint32_t rate_now = HAL_GetTick();
-    uint32_t rate_dt = rate_now - last_rate_tick;
-    if (rate_dt >= 1000)
-    {
-      last_rate_tick = rate_now;
-      keyboard_print_rates(rate_dt);
-    }
-
-    buttons_poll();
-
-    pedals_poll();
-
-    /* Close the dashboard frame (draws the closing rule, reflows the scroll
-     * region, or tears the dashboard down once no report is enabled). */
-    report_end();
-
-    /* Process any byte buffered by the UART RX ISR, then restore the prompt. */
-    console_poll();
-    if (console_take_dirty()) console_redraw_prompt();
+    main_task();
   }
   /* USER CODE END 3 */
 }

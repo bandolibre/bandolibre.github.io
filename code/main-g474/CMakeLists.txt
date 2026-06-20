@@ -52,6 +52,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     app/bellow_phys.c
     app/buttons.c
     app/keyboard.cpp
+    app/app.cc
     app/keyboard_layout.c
     app/midi.c
     app/pedals.c
