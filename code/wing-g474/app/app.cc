@@ -69,19 +69,7 @@ static void adc_set_scan2(ADC_HandleTypeDef *hadc, uint32_t chA, uint32_t chB)
 // Performs one full sweep into hall_data.
 static void hall_keyboard_scan(uint16_t hall_data[HALL_NUM_ADC][HALL_SLOTS_PER_ADC])
 {
-  static int initialized = 0;
   static ADC_HandleTypeDef *const adcs[5] = { &hadc1, &hadc2, &hadc3, &hadc4, &hadc5 };
-  static const uint32_t chA[5] = { ADC_CHANNEL_1, ADC_CHANNEL_3, ADC_CHANNEL_12, ADC_CHANNEL_4, ADC_CHANNEL_1 };
-  static const uint32_t chB[5] = { ADC_CHANNEL_2, ADC_CHANNEL_4, ADC_CHANNEL_1,  ADC_CHANNEL_5, ADC_CHANNEL_2 };
-
-  if (!initialized)
-  {
-    HAL_GPIO_WritePin(HALL_NEN_GPIO_Port, HALL_NEN_Pin, GPIO_PIN_RESET);
-    HAL_Delay(5);
-    for (int a = 0; a < 5; a++)
-      adc_set_scan2(adcs[a], chA[a], chB[a]);
-    initialized = 1;
-  }
 
   for (int sel = 0; sel < HALL_NUM_SEL; sel++)
   {
@@ -95,23 +83,26 @@ static void hall_keyboard_scan(uint16_t hall_data[HALL_NUM_ADC][HALL_SLOTS_PER_A
       // hall_data, whose layout already matches the per-ADC buffer. Start_DMA
       // also issues the software trigger for sel 0. The circular buffer wraps
       // back to index 0 after exactly 8 transfers, i.e. at the end of the sweep.
-      for (int a = 0; a < 5; a++)
-        HAL_ADC_Start_DMA(adcs[a], (uint32_t *)hall_data[a], HALL_SLOTS_PER_ADC);
+      size_t a = 0;
+      for (auto adc : adcs) {
+        HAL_ADC_Start_DMA(adc, (uint32_t *)hall_data[a], HALL_SLOTS_PER_ADC);
+        ++a;
+      }
     }
     else
     {
       // ADCs are armed; just re-trigger. ContinuousConvMode is disabled, so the
       // ADC halts after each 2-rank sequence -> ADSTART is a clean per-sel gate.
-      for (int a = 0; a < 5; a++)
-        SET_BIT(adcs[a]->Instance->CR, ADC_CR_ADSTART);
+      for (auto adc : adcs)
+        SET_BIT(adc->Instance->CR, ADC_CR_ADSTART);
     }
 
     // Wait for all 5 sequences (2 conversions each) to finish.
-    for (int a = 0; a < 5; a++)
-      while (READ_BIT(adcs[a]->Instance->CR, ADC_CR_ADSTART)) { }
+    for (auto adc : adcs)
+      while (READ_BIT(adc->Instance->CR, ADC_CR_ADSTART)) { }
   }
-  for (int a = 0; a < 5; a++)
-    HAL_ADC_Stop_DMA(adcs[a]);
+  for (auto adc : adcs)
+    HAL_ADC_Stop_DMA(adc);
 
   // DMA wrote straight into hall_data in its [adc][sel*rank + rank] layout,
   // so no de-interleave step is needed.
@@ -248,26 +239,6 @@ static void print_hall_table(uint16_t hall_data[HALL_NUM_ADC][HALL_SLOTS_PER_ADC
   printf(ANSI_CURSOR_RESTORE ANSI_CURSOR_SHOW);
 }
 
-static void blink_tick(void)
-{
-  if (g_blink.remaining == 0)
-    return;
-  uint32_t now = HAL_GetTick();
-  if (now - g_blink.last_tick < 200)
-    return;
-  g_blink.last_tick = now;
-  if (g_blink.led_on)
-  {
-    HAL_GPIO_WritePin(g_blink.port, g_blink.pin, GPIO_PIN_RESET);
-    g_blink.led_on = 0;
-    g_blink.remaining--;
-  }
-  else
-  {
-    HAL_GPIO_WritePin(g_blink.port, g_blink.pin, GPIO_PIN_SET);
-    g_blink.led_on = 1;
-  }
-}
 
 extern "C" int console_execute(int argc, const char * const *argv)
 {
@@ -312,6 +283,18 @@ void main_init(void)
   printf("SPI1 init: APB2ENR=0x%lx CR1=0x%lx CR2=0x%lx SR=0x%lx\r\n",
          (unsigned long)RCC->APB2ENR, (unsigned long)SPI1->CR1,
          (unsigned long)SPI1->CR2, (unsigned long)SPI1->SR);
+
+  ADC_HandleTypeDef *const adcs[5] = { &hadc1, &hadc2, &hadc3, &hadc4, &hadc5 };
+  const uint32_t chA[5] = { ADC_CHANNEL_1, ADC_CHANNEL_3, ADC_CHANNEL_12, ADC_CHANNEL_4, ADC_CHANNEL_1 };
+  const uint32_t chB[5] = { ADC_CHANNEL_2, ADC_CHANNEL_4, ADC_CHANNEL_1,  ADC_CHANNEL_5, ADC_CHANNEL_2 };
+
+  HAL_GPIO_WritePin(HALL_NEN_GPIO_Port, HALL_NEN_Pin, GPIO_PIN_RESET);
+  HAL_Delay(5);
+  size_t i = 0;
+  for (auto adc : adcs) {
+    adc_set_scan2(adc, chA[i], chB[i]);
+    ++i;
+  }
 }
 
 void main_task(void)
@@ -327,8 +310,6 @@ void main_task(void)
     fn0_prev = fn0;
     printf("FN0: %c\r\n", fn0 ? '1' : '0');
   }
-
-  blink_tick();
 
   hall_keyboard_scan(g_hall_data);
   hall_stats_update(&g_hall_stats, (const uint16_t *)g_hall_data);
