@@ -1,6 +1,7 @@
 #ifndef APP_BELLOW_PHYS_H
 #define APP_BELLOW_PHYS_H
 
+#include <stdbool.h>
 #include <stdint.h>
 #include "bellow_classify.h"
 
@@ -14,6 +15,7 @@ typedef struct {
   uint16_t leak_per_key;    /* extra bleed per pressed key, /256 per second */
   uint16_t dir_dead;        /* direction deadzone half-width, pressure units */
   uint16_t dir_hyst;        /* direction hysteresis margin, pressure units */
+  bool impulse_directional; /* if true, only apply impulse when it reinforces current direction */
 } bellow_phys_params_t;
 
 /* Mutable state kept between steps. Zero-initialise on first use. */

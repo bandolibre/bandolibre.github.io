@@ -11,7 +11,13 @@ void bellow_phys_step(bellow_phys_state_t *state, float F, float dt_s,
   /* Velocity: explicit impulse kick from the flexion speed (catches a sharp
    * impulse a sluggish oscillator would miss), then the damped restoring
    * drive toward F. Semi-implicit Euler: P below is pumped by this new v. */
-  state->v += (float)params->impulse_gain / 256.0f * (F - state->f_prev);
+  float impulse = (float)params->impulse_gain / 256.0f * (F - state->f_prev);
+  if (!params->impulse_directional ||
+      (state->p >= 0.0f && impulse >= 0.0f) ||
+      (state->p < 0.0f && impulse < 0.0f))
+  {
+    state->v += impulse;
+  }
   state->v += (omega * omega * (F - state->p) - 2.0f * zeta * omega * state->v) * dt_s;
   state->f_prev = F;
 

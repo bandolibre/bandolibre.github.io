@@ -125,6 +125,9 @@ PROPERTY(34, uint16_t, bellow_inertia_dir_dead,
 PROPERTY(35, uint16_t, bellow_inertia_dir_hyst,
          .default_value = 32, .min = 0, .max = 512,
          .description = "Inertia (FN2): margin given back before returning to neutral, pressure units; pair with dir_dead")
+PROPERTY(36, bool, bellow_inertia_impulse_directional,
+         .default_value = 0,
+         .description = "Inertia (FN2): apply impulse only when reinforcing current direction (reduces bounce on release)")
 PROPERTY(PROPERTY_TAG_NONE, bool, log_bellow,
          .default_value = 0,
          .description = "Log hall readings and bellows direction each poll")
