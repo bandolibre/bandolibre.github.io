@@ -117,7 +117,7 @@ Bandonéo fonctionne brillamment avec [Native Instruments Session Strings](https
 ## Communauté
 
 Questions, idées, ou simplement curieux ?
-Rejoignez [L'Atelier du bandonéon libre](https://github.com/bandolibre) ou visitez [bandolibre.github.io](https://bandolibre.github.io).
+Rejoignez [L'Atelier du bandonéon libre](https://bandolibre.github.io).
 
 La carte principale communique numériquement avec les cartes de ailes et peut prendre en charge de noeaux types de clavier. Il est possible de concevoir un nouveau clavier pour un système différent — Einheitsbandoneon, Peguri, Manouri — et de réutiliser la carte principale.
 

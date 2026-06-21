@@ -117,7 +117,7 @@ Bandonéo funciona brillantemente con [Native Instruments Session Strings](https
 ## Comunidad
 
 ¿Preguntas, ideas, o simplemente tienes curiosidad?
-Únete a [L'Atelier du bandonéon libre](https://github.com/bandolibre) o visita [bandolibre.github.io](https://bandolibre.github.io).
+Únete a [L'Atelier du bandonéon libre](https://bandolibre.github.io).
 
 La placa principal se comunica digitalmente con las placas wing y puede soportar cualquier disposición. Es posible diseñar un nuevo teclado para un sistema diferente — Rheinische Lage, Club, Einheitsbandoneon, Peguri, Manouri — y reutilizar la placa principal.
 

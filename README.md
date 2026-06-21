@@ -117,7 +117,7 @@ Bandonéo works brilliantly with [Native Instruments Session Strings](https://ww
 ## Community
 
 Questions, ideas, or just curious?
-Join [L'Atelier du bandonéon libre](https://github.com/bandolibre) or visit [bandolibre.github.io](https://bandolibre.github.io).
+Join [L'Atelier du bandonéon libre](https://bandolibre.github.io).
 
 The main board communicates digitally with the wing boards and can support any layout. It is possible to design a new keyboard for a different system — Rheinische Lage, Club, Einheitsbandoneon, Peguri, Manouri — and reuse the main board.
 
