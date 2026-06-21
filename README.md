@@ -1,0 +1,125 @@
+![Bandoneo keyboard](documentation/images/3dmodel_keyboard_tilt.webp)
+
+# Bandonéo
+
+An open-source MIDI controller that brings the Argentine bandoneon into the digital age.
+
+**Bandonéo focuses on one goal:** turning key presses and bellows movement into MIDI — faithfully, instantly, and without the cost or noise of an acoustic instrument. Plug it into any computer, tablet, or phone over USB and you're ready to play, compose, or practice.
+
+An open initiative by [L'Atelier du bandonéon libre](https://github.com/bandolibre)
+
+---
+
+## Who is it for?
+
+- **Students** who don't own an instrument yet and want to start learning
+- **Players** who want to practice silently — at home, on the road, at any hour
+- **Composers** entering scores into notation software one note at a time
+- **Musicians** triggering synths and samplers on stage or in the studio
+
+---
+
+## How it works
+
+- **142-key Rheinische Lage layout** — both hands, exact fingering of the Argentine bandoneon
+- **Hall-effect sensors** on every key — no mechanical contact, no wear, scanned 2400 times per second
+- **Blade spring + sensor pair** for the bellows — measures push/pull effort and emits MIDI CC#11 (Expression), just like the real thing
+- **Two 6.35 mm expression pedal inputs** — compatible with M-Audio EX-P pedals; pedal 1 sends CC#1 (Modulation), pedal 2 sends CC#4 (Foot Controller)
+- **USB-MIDI** out of the box — plug into any DAW, notation app, or synth; no drivers needed
+
+---
+
+## Features
+
+**Table mode** — a button toggles table mode: keys fire immediately at fixed velocity, no bellows movement required. Handy for entering a score note by note without working the bellows.
+
+**Play anywhere** — Bandonéo is bus-powered over USB; any phone, tablet, or laptop with a soft synth becomes the sound engine. A small USB hub with a headphone jack and a power pass-through gives you audio, charging, and MIDI from a single cable — tested and pocket-sized.
+
+**Adaptable** — standard USB-MIDI is compatible with the whole adapter ecosystem: plug in a USB Bluetooth MIDI adapter to play wirelessly, or a USB-to-DIN-5 adapter to drive vintage hardware synths.
+
+---
+
+## Anyone can build it
+
+This is a fully open DIY project. PCBs are designed for economic JLCPCB two-layer fabrication — affordable and easy to order. The mechanical parts are 3D-printable (a FabLab near you works great). Firmware is open-source and flashable with a standard [ST-LINK probe](https://www.st.com/en/development-tools/stlink-v3minie.html) and a [TC-2070-IDC-050](https://www.tag-connect.com/product/tc2070-idc-050) cable.
+
+Building one costs about as much as a decent MIDI keyboard or a good pair of studio headphones like the DT-770 Pro.
+
+---
+
+## Bill of Materials
+
+| Part | Qty | Notes |
+|------|-----|-------|
+| 3D-printed body parts + 71 keys | — | ~880 g filament, ~24 h print time, [STEP files](https://github.com/piwicode/bandoneo/releases)|
+| Electronics board: Main, left and right PCBs  | 1 | [EasyEDA design](boards), [Gerber files](https://github.com/piwicode/bandoneo/releases) |
+| Hall-effect switches | 71 | [GATERON Low Profile Magnetic Jade HE](https://www.gateron.com/products/gateron-low-profile-magnetic-jade-switch?VariantsId=10872) |
+| Bellows spring strip | 1 | [65Mn spring steel, 1.2 × 40 × 300 mm](https://fr.aliexpress.com/item/1005006952720032.html?spm=a2g0o.order_list.order_list_main.17.3cfd1802U67eT2&gatewayAdapt=glo2fra) |
+| Permanent magnets 14.5 × 6 × 2 mm | 2 |  |
+| M4 × 30 socket head cap, stainless A2 | 4 | [supplier](https://www.vis-express.fr/vis-metaux-inox-a2-chc-btr-cle-de-8-hc8-filetage-total-din-912-din-912-iso-4762/36756-927484-vis-metaux-inox-a2-chc-btr-cle-de-3-hc3-m4x40-filetee-sur-22.html#/267-conditionnement-200_pieces)|
+| M4 × 10 × 0.8 flat washer, stainless A2 | 4 | [supplier](https://www.vis-express.fr/rondelle-plate-m-inox-a2-nfe-25513vs-nfe25513-grade-c/36925-940576-rondelle-plate-m4x10x08-m-inox-a2.html#/267-conditionnement-200_pieces)|
+| M3 × 6 socket head cap, stainless A2 | 19 | [supplier](https://www.vis-express.fr/vis-metaux-inox-a2-chc-btr-cle-de-8-hc8-filetage-total-din-912-din-912-iso-4762/36726-2595617-vis-metaux-inox-a2-chc-btr-cle-de-25-hc25-m3x6-filetage-total.html#/21-conditionnement-1_piece)|
+| M3 × 8 socket head cap, stainless A2 | 11 | [supplier](https://www.vis-express.fr/vis-metaux-inox-a2-chc-btr-cle-de-8-hc8-filetage-total-din-912-din-912-iso-4762/36728-2610009-vis-metaux-inox-a2-chc-btr-cle-de-25-hc25-m3x8-filetage-total.html#/21-conditionnement-1_piece) |
+| M3 × 12 socket head cap, stainless A2 | 4 | [supplier](https://www.vis-express.fr/vis-metaux-inox-a2-chc-btr-cle-de-8-hc8-filetage-total-din-912-din-912-iso-4762/36731-2616466-vis-metaux-inox-a2-chc-btr-cle-de-25-hc25-m3x12-filetage-total.html#/21-conditionnement-1_piece) |
+| M3 × 18 socket head cap, stainless A2 | 4 | [supplier](https://www.vis-express.fr/vis-metaux-inox-a2-chc-btr-cle-de-8-hc8-filetage-total-din-912-din-912-iso-4762/36734-2596394-vis-metaux-inox-a2-chc-btr-cle-de-25-hc25-m3x18-filetage-total.html#/21-conditionnement-1_piece) |
+| Adhesives | 2 drops | Loctite 480 |
+| USB Type-B cable | 1 | |
+
+They are best built in batches of five — JLCPCB minimum orders make that the natural unit. Team up with friends or reach out to [L'Atelier du bandonéon libre](https://github.com/bandolibre) to express interest in a community build.
+
+At fifty units, PCB fabrication and Gateron switches — the two biggest line items — drop by half again.
+
+---
+
+## Design
+
+The mechanical parts are modeled in Onshape — [the full 3D model](https://cad.onshape.com/documents/313e70e978bf056a8dd7d76c/v/5c5fbc4088ac379c1bd1b53a/e/c6a89cb028bdc195ff70596f?showReturnToWorkspaceLink=tru) is public and interactive. Reference [photography](keyboard_picture/) of real instruments was used to accurately reproduce the shape, key placement, and keyboard tilt of both hands. 
+![overview](documentation/images/3dmodel_overview.webp)
+![handle_layout](documentation/images/3dmodel_handle.webp)
+![keyboard_layout](documentation/images/3dmodel_keyboard_layout.webp)
+
+The PCBs are designed with EasyEDA.
+![3d_pcb](documentation/images/pcb_main_board_3d.png)
+
+The bellows replacement is a **blade spring instrumented with two Hall-effect sensors** that read its flexion. A load cell was evaluated and rejected early on: a load cell has near-zero compliance, which removes the small defined travel that bandoneonists rely on to feel and modulate their effort — it plays like pressing on a wall. The blade spring preserves that proprioceptive feedback while being simple and durable. Blade thickness can be chosen to tune the instrument's stiffness, from light to firm. A dedicated sensitivity button on the instrument also cycles through three amplification levels so the player can adjust how much bellows travel is needed to reach full expression — useful for quiet practice or a stiffer spring.
+
+---
+
+## Build it
+
+- **Hardware & assembly:** see [`documentation/`](documentation/)
+- **Firmware:** see [`code/`](code/) — build with `just build` from the board directory, flash via ST-LINK
+
+---
+
+## Where we are
+
+![Bandoneo overview](documentation/images/bandoneo_overview.webp)
+![Bandoneo main module](documentation/images/bandoneo_main_module.webp)
+
+Five units are built and working. The firmware handles all 142 keys, bellows push/pull, pedals, and MIDI output reliably. These instruments are currently on loan to bandoneon teachers who are giving us hands-on feedback while we polish the software.
+
+The 3D models and PCB designs are solid — no rework planned there. The active focus right now is tuning the bellows simulation: getting the inertia model right so that short notes feel like the real instrument, not like a sensor.
+
+There is a lot to explore on the software side. Because Hall-effect sensors measure key position continuously — not just on/off — the firmware has access to the full travel of every key at all times. This opens the door to **MPE (MIDI Polyphonic Expression)**: per-note pressure, slide, and lift curves, independently for each of the 142 keys simultaneously.
+
+Bandonéo works brilliantly with [Native Instruments Session Strings](https://www.native-instruments.com/en/products/komplete/orchestral/session-strings-2/) and similar orchestral libraries. That said, we are actively looking for virtual instruments with deep expressive support — rich polyphony and CC#11 as a primary articulation driver. If you know of one, or want to help build something tailored to the bandoneon, suggestions and contributions are very welcome.
+
+---
+
+## Community
+
+Questions, ideas, or just curious?
+Join [L'Atelier du bandonéon libre](https://github.com/bandolibre) or visit [bandolibre.github.io](https://bandolibre.github.io).
+
+The main board communicates digitally with the wing boards and can support any layout. It is possible to design a new keyboard for a different system — Rheinische Lage, Club, Einheitsbandoneon, Peguri, Manouri — and reuse the main board.
+
+Working on something similar? Let the association know — we'd love to connect.
+
+---
+
+## License
+
+[![CC BY-NC-SA 4.0](https://mirrors.creativecommons.org/presskit/buttons/88x31/svg/by-nc-sa.eu.svg)](LICENSE.md)
+
+Free to build, modify, and share for non-commercial use.

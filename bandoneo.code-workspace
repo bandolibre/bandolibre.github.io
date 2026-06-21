@@ -6,6 +6,9 @@
 		},
 		{
 			"path": "../STM32CubeG4"
+		},
+		{
+			"path": "../bandolibre.github.io"
 		}
 	],
 	"settings": {
