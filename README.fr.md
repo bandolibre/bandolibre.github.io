@@ -23,7 +23,7 @@ Une initiative ouverte de [L'Atelier du bandonéon libre](https://github.com/ban
 
 ## Comment ça fonctionne
 
-- **Clavier Rheinische Lage à 142 touches** — les deux mains, doigtés exacts du bandonéon argentin
+- **Clavier Rheinische Lage à 142 tons** — les deux mains, doigtés exacts du bandonéon argentin
 - **Capteurs à effet Hall sur chaque touche** — pas de contact mécanique, aucune usure, 2400 lectures par seconde
 - **Lame-ressort + capteur** pour le soufflet — mesure l'effort de poussée et de traction et émet MIDI CC#11 (Expression), comme le vrai instrument
 - **Deux entrées pédale d'expression 6,35 mm** — compatibles M-Audio EX-P ; pédale 1 envoie CC#1 (Modulation), pédale 2 envoie CC#4 (Contrôleur de pied)

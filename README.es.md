@@ -23,7 +23,7 @@ Una iniciativa abierta de [L'Atelier du bandonéon libre](https://github.com/ban
 
 ## Cómo funciona
 
-- **Teclado Rheinische Lage de 142 teclas** — ambas manos, digitación exacta del bandoneón argentino
+- **Teclado Rheinische Lage de 142 tonos** — ambas manos, digitación exacta del bandoneón argentino
 - **Sensores de efecto Hall en cada tecla** — sin contacto mecánico, sin desgaste, 2400 lecturas por segundo
 - **Lámina resorte + sensor** para el fuelle — mide el esfuerzo de empuje y tracción y emite MIDI CC#11 (Expresión), igual que el instrumento real
 - **Dos entradas de pedal de expresión de 6,35 mm** — compatibles con M-Audio EX-P; pedal 1 envía CC#1 (Modulación), pedal 2 envía CC#4 (Controlador de pie)
