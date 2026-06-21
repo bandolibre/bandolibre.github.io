@@ -1,5 +1,7 @@
 ![Bandoneo keyboard](documentation/images/3dmodel_keyboard_tilt.webp)
 
+🇬🇧 **English** | 🇫🇷 [Français](README.fr.md) | 🇪🇸 [Español](README.es.md)
+
 # Bandonéo
 
 An open-source MIDI controller that brings the Argentine bandoneon into the digital age.
@@ -73,15 +75,20 @@ At fifty units, PCB fabrication and Gateron switches — the two biggest line it
 
 ## Design
 
-The mechanical parts are modeled in Onshape — [the full 3D model](https://cad.onshape.com/documents/313e70e978bf056a8dd7d76c/v/5c5fbc4088ac379c1bd1b53a/e/c6a89cb028bdc195ff70596f?showReturnToWorkspaceLink=tru) is public and interactive. Reference [photography](keyboard_picture/) of real instruments was used to accurately reproduce the shape, key placement, and keyboard tilt of both hands. 
 ![overview](documentation/images/3dmodel_overview.webp)
+
+The mechanical parts are modeled in Onshape — [the full 3D model](https://cad.onshape.com/documents/313e70e978bf056a8dd7d76c/v/5c5fbc4088ac379c1bd1b53a/e/c6a89cb028bdc195ff70596f?showReturnToWorkspaceLink=tru) is public and interactive. Reference [photography](keyboard_picture/) of real instruments was used to accurately reproduce the shape, key placement, and keyboard tilt of both hands.
 ![handle_layout](documentation/images/3dmodel_handle.webp)
 ![keyboard_layout](documentation/images/3dmodel_keyboard_layout.webp)
 
 The PCBs are designed with EasyEDA.
 ![3d_pcb](documentation/images/pcb_main_board_3d.png)
 
-The bellows replacement is a **blade spring instrumented with two Hall-effect sensors** that read its flexion. A load cell was evaluated and rejected early on: a load cell has near-zero compliance, which removes the small defined travel that bandoneonists rely on to feel and modulate their effort — it plays like pressing on a wall. The blade spring preserves that proprioceptive feedback while being simple and durable. Blade thickness can be chosen to tune the instrument's stiffness, from light to firm. A dedicated sensitivity button on the instrument also cycles through three amplification levels so the player can adjust how much bellows travel is needed to reach full expression — useful for quiet practice or a stiffer spring.
+The bellows is replaced by a **blade spring instrumented with two Hall-effect sensors** that read its flexion. Load cell solutions were ruled out early — they are too rigid and remove the tactile feedback players rely on to feel and modulate their effort — it plays like pressing on a wall. The blade spring preserves that proprioceptive feedback while being simple and durable. Blade thickness can be chosen to tune the instrument's stiffness, from light to firm.
+
+![blade spring](documentation/images/bandoneo_blade.webp)
+
+A sensitivity selector button cycles through three amplification levels so the player can adjust how much bellows travel is needed to reach full expression — useful for quiet practice or a stiffer spring.
 
 ---
 
@@ -103,7 +110,7 @@ The 3D models and PCB designs are solid — no rework planned there. The active 
 
 There is a lot to explore on the software side. Because Hall-effect sensors measure key position continuously — not just on/off — the firmware has access to the full travel of every key at all times. This opens the door to **MPE (MIDI Polyphonic Expression)**: per-note pressure, slide, and lift curves, independently for each of the 142 keys simultaneously.
 
-Bandonéo works brilliantly with [Native Instruments Session Strings](https://www.native-instruments.com/en/products/komplete/orchestral/session-strings-2/) and similar orchestral libraries. That said, we are actively looking for virtual instruments with deep expressive support — rich polyphony and CC#11 as a primary articulation driver. If you know of one, or want to help build something tailored to the bandoneon, suggestions and contributions are very welcome.
+Bandonéo works brilliantly with [Native Instruments Session Strings](https://www.native-instruments.com/en/products/komplete/orchestral/session-strings-2/). That said, we are actively looking for virtual instruments with deep expressive support — rich polyphony and CC#11 as a primary articulation driver. If you know of one, or want to help build something tailored to the bandoneon, suggestions and contributions are very welcome.
 
 ---
 
