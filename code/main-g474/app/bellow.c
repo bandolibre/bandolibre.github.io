@@ -149,7 +149,7 @@ static void bellow_swo_trace(const bellow_naive_state_t *naive, const bellow_phy
   last_tick = now;
   if (last_header_sent == 0)
   {
-    swo_print("timestamp,inertia,"
+    swo_print("timestamp,use_inertia,"
               "naive.direction,naive.intensity,"
               "phys.v,phys.p,phys.eff_intensity,phys.eff_dir,phys.f_prev,"
               "hall_total_centred,keys\n");
