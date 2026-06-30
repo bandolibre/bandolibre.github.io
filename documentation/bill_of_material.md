@@ -24,6 +24,14 @@ every stroke, so it must resist cyclic peel without cracking. All three are
 toughened (rubber-modified) structural adhesives that meet both.
 
 
+## Cutting the blade springs
+
+- Norton Extreme steel/inox cutting disc, 125 x 1.6 mm, for an angle grinder
+
+Cuts the spring steel to length. The disc is thin enough to keep the kerf
+narrow and the heat-affected zone small, so the steel keeps its temper at the
+cut edge.
+
 ## Programming
 
 - ST-LINK V3 MINIE (preferred) or ST-LINK V3 SET
@@ -35,3 +43,4 @@ restrictions. The ST-LINK V3 also exposes a USART, which is more robust than SWO
 for logging and lets you send commands to the firmware during development. The
 MINIE has all the features needed and is cheaper than the SET.
 
+## 
