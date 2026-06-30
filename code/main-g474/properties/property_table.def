@@ -36,7 +36,7 @@ PROPERTY(5, uint16_t, bellow_hyst,
          .default_value = 40, .min = 0, .max = 4095,
          .description = "Margin given back before returning to neutral")
 PROPERTY(6, uint16_t, bellow_full_push,
-         .default_value = 9000, .min = 0, .max = 30000,
+         .default_value = 9500, .min = 0, .max = 30000,
          .description = "Combined hall reading at full push")
 PROPERTY(7, uint16_t, bellow_full_pull,
          .default_value = 13000, .min = 0, .max = 30000,
