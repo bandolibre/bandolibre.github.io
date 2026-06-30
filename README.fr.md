@@ -12,6 +12,14 @@ Une initiative ouverte de [L'Atelier du bandonéon libre](https://github.com/ban
 
 ---
 
+## À l'écoute
+
+[![Démo du Bandonéo avec une clarinette virtuelle](https://img.youtube.com/vi/6s1wlRKlAk4/maxresdefault.jpg)](https://youtu.be/6s1wlRKlAk4)
+
+Voir les démos : [avec une clarinette virtuelle](https://youtu.be/6s1wlRKlAk4) · [avec des instruments virtuels à cordes](https://youtu.be/nJ0j7DtbYDk).
+
+---
+
 ## Pour qui ?
 
 - **Les élèves** qui n'ont pas encore d'instrument et veulent commencer à apprendre

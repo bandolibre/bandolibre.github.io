@@ -12,6 +12,14 @@ An open initiative by [L'Atelier du bandonéon libre](https://github.com/bandoli
 
 ---
 
+## See it play
+
+[![Bandonéo demo with a clarinet virtual instrument](https://img.youtube.com/vi/6s1wlRKlAk4/maxresdefault.jpg)](https://youtu.be/6s1wlRKlAk4)
+
+Watch the demos: [with a clarinet virtual instrument](https://youtu.be/6s1wlRKlAk4) · [with strings virtual instruments](https://youtu.be/nJ0j7DtbYDk).
+
+---
+
 ## Who is it for?
 
 - **Students** who don't own an instrument yet and want to start learning
