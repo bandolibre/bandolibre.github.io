@@ -253,6 +253,18 @@ static bellow_sample_t bellow_sample(void)
   return s;
 }
 
+/* Human-readable name for a bellows direction. */
+static const char *bellows_dir_str(bellows_t dir)
+{
+  switch (dir)
+  {
+    case BELLOWS_PULL:    return "PULL";
+    case BELLOWS_PUSH:    return "PUSH";
+    case BELLOWS_NEUTRAL: return "NEUTRAL";
+    default:              return "?";
+  }
+}
+
 /* Emits the optional console log and live-report dashboard for one sample. */
 static void bellow_report(const bellow_sample_t *s, const bellow_naive_state_t *naive_state,
                           const bellow_physical_simulation_state_t *phys)
@@ -290,8 +302,8 @@ static void bellow_report(const bellow_sample_t *s, const bellow_naive_state_t *
     float conv_us = (float)s->conv_cycles / (SystemCoreClock / 1000000.0f);
     float force = (naive_state->direction == BELLOWS_PUSH) ? -(float)naive_state->intensity
                 : (naive_state->direction == BELLOWS_PULL) ?  (float)naive_state->intensity : 0.0f;
-    console_dash_println("BELLOW  dir=%-7d int=%4u  force=%+5d v=%+8.1f P=%+7.1f  eff=%4u(%d) keys=%u",
-                         (int)naive_state->direction, naive_state->intensity,
+    console_dash_println("BELLOW  dir=%-7s int=%4u  force=%+5d v=%+8.1f P=%+7.1f  eff=%4u(%d) keys=%u",
+                         bellows_dir_str(naive_state->direction), naive_state->intensity,
                          (int)force, (double)phys->core.v, (double)phys->core.p,
                          phys->core.eff_intensity, (int)phys->core.eff_dir,
                          keyboard_keys_pressed());
