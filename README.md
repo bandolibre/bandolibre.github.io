@@ -99,6 +99,8 @@ The bellows is replaced by a **blade spring instrumented with two Hall-effect se
 
 A sensitivity selector button cycles through three amplification levels so the player can adjust how much bellows travel is needed to reach full expression — useful for quiet practice or a stiffer spring.
 
+For a detailed breakdown of the firmware behavior and controls, see [`documentation/features.md`](documentation/features.md).
+
 ---
 
 ## Build it
@@ -131,6 +133,12 @@ Join [L'Atelier du bandonéon libre](https://bandolibre.github.io).
 The main board communicates digitally with the wing boards and can support any layout. It is possible to design a new keyboard for a different system — Rheinische Lage, Club, Einheitsbandoneon, Peguri, Manouri — and reuse the main board.
 
 Working on something similar? Let the association know — we'd love to connect.
+
+---
+
+## Further readings
+
+- [Other electronic bandoneon projects](documentation/other-projects.md)
 
 ---
 

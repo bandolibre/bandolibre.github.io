@@ -99,6 +99,8 @@ Le soufflet est remplacé par une **lame-ressort instrumentée de deux capteurs 
 
 Un bouton sélecteur de sensibilité permet de cycler entre trois niveaux d'amplification pour ajuster la course de soufflet nécessaire à l'expression maximale — utile pour jouer doucement ou avec une lame plus rigide.
 
+Pour un détail du comportement du firmware et des commandes, voir [`documentation/features.md`](documentation/features.md).
+
 ---
 
 ## Construction
@@ -131,6 +133,12 @@ Rejoignez [L'Atelier du bandonéon libre](https://bandolibre.github.io).
 La carte principale communique numériquement avec les cartes de ailes et peut prendre en charge de noeaux types de clavier. Il est possible de concevoir un nouveau clavier pour un système différent — Einheitsbandoneon, Peguri, Manouri — et de réutiliser la carte principale.
 
 Vous travaillez sur quelque chose de similaire ? Faites-le savoir à l'association — nous serions ravis d'échanger.
+
+---
+
+## Pour aller plus loin
+
+- [Autres projets de bandonéon électronique](documentation/other-projects.md)
 
 ---
 

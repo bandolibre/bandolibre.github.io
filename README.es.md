@@ -99,6 +99,8 @@ El fuelle es reemplazado por una **lámina resorte instrumentada con dos sensore
 
 Un botón selector de sensibilidad permite ciclar entre tres niveles de amplificación para ajustar cuánto recorrido de fuelle se necesita para alcanzar la expresión máxima — útil para tocar suave o con una lámina más rígida.
 
+Para un desglose detallado del comportamiento del firmware y los controles, ver [`documentation/features.md`](documentation/features.md).
+
 ---
 
 ## Construcción
@@ -131,6 +133,12 @@ Bandonéo funciona brillantemente con [Native Instruments Session Strings](https
 La placa principal se comunica digitalmente con las placas wing y puede soportar cualquier disposición. Es posible diseñar un nuevo teclado para un sistema diferente — Rheinische Lage, Club, Einheitsbandoneon, Peguri, Manouri — y reutilizar la placa principal.
 
 ¿Estás trabajando en algo similar? Cuéntale a la asociación — nos encantaría conectar.
+
+---
+
+## Lecturas adicionales
+
+- [Otros proyectos de bandoneón electrónico](documentation/other-projects.md)
 
 ---
 
