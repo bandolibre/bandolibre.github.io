@@ -66,6 +66,7 @@ Construir uno cuesta aproximadamente lo mismo que un buen teclado MIDI o un buen
 | Tornillo allen M3 × 18, acero inox A2 | 4 | [proveedor](https://www.vis-express.fr/vis-metaux-inox-a2-chc-btr-cle-de-8-hc8-filetage-total-din-912-din-912-iso-4762/36734-2596394-vis-metaux-inox-a2-chc-btr-cle-de-25-hc25-m3x18-filetage-total.html#/21-conditionnement-1_piece) |
 | Adhesivos | 2 gotas | Loctite 480 |
 | Cable USB Type-B | 1 | |
+| Cable plano, FC 1.27 mm, 12P (2×6), 10 cm | 2 | [proveedor](https://fr.aliexpress.com/item/1005005058041580.html) |
 
 Lo ideal es construirlos en lotes de cinco — los pedidos mínimos de JLCPCB hacen de esa la unidad natural. Únete a amigos o contacta a [L'Atelier du bandonéon libre](https://github.com/bandolibre) para expresar interés en una construcción colectiva.
 

@@ -66,6 +66,7 @@ Building one costs about as much as a decent MIDI keyboard or a good pair of stu
 | M3 × 18 socket head cap, stainless A2 | 4 | [supplier](https://www.vis-express.fr/vis-metaux-inox-a2-chc-btr-cle-de-8-hc8-filetage-total-din-912-din-912-iso-4762/36734-2596394-vis-metaux-inox-a2-chc-btr-cle-de-25-hc25-m3x18-filetage-total.html#/21-conditionnement-1_piece) |
 | Adhesives | 2 drops | Loctite 480 |
 | USB Type-B cable | 1 | |
+| Ribbon cable, FC 1.27 mm, 12P (2×6), 10 cm | 2 | [supplier](https://fr.aliexpress.com/item/1005005058041580.html) |
 
 They are best built in batches of five — JLCPCB minimum orders make that the natural unit. Team up with friends or reach out to [L'Atelier du bandonéon libre](https://github.com/bandolibre) to express interest in a community build.
 

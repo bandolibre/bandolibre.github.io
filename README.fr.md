@@ -66,6 +66,7 @@ Construire un Bandonéo coûte à peu près autant qu'un bon clavier MIDI ou une
 | Vis CHC M3 × 18, inox A2 | 4 | [fournisseur](https://www.vis-express.fr/vis-metaux-inox-a2-chc-btr-cle-de-8-hc8-filetage-total-din-912-din-912-iso-4762/36734-2596394-vis-metaux-inox-a2-chc-btr-cle-de-25-hc25-m3x18-filetage-total.html#/21-conditionnement-1_piece) |
 | Adhésifs | 2 gouttes | Loctite 480 |
 | Câble USB Type-B | 1 | |
+| Nappe, FC 1.27 mm, 12P (2×6), 10 cm | 2 | [fournisseur](https://fr.aliexpress.com/item/1005005058041580.html) |
 
 La construction par lot de cinq est idéale — les commandes minimum JLCPCB en font l'unité naturelle. Faites équipe avec des amis ou contactez [L'Atelier du bandonéon libre](https://github.com/bandolibre) pour manifester votre intérêt pour une construction collective.
 
