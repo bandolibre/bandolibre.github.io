@@ -1,46 +1,199 @@
-
-## Magnetic push buttons
-
-GATERON Full POM Low Profile Magnetic Jade Pro HE Switch Set
-40±10gf
-
-You can opt for lighter springs and select:
-
-GATERON Low Profile Magnetic Jade HE Switch Set
-30±10gf
+# Assembly instructions
 
 
-# Consomable
+The Bandoneo is meant to be built. It exists so that anyone, anywhere in the
+world, can make one if they want to — this page walks you through everything it
+takes.
 
-## Glue
+<script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 
-- Loctite 480 (prefered)
-- 3M DP420
-- Loctite EA 9466
+<model-viewer
+  src="models/Bandoneo.glb"
+  alt="Bandoneo 3D model"
+  camera-controls
+  auto-rotate
+  shadow-intensity="1"
+  style="width: 100%; height: 480px;">
+  <a href="models/Bandoneo.glb">View the Bandoneo 3D model</a>
+</model-viewer>
+
+
+If you take that journey, don't be a stranger: let us know how it goes. We'd
+love to hear about your progress, see your build, and learn from what you
+discover along the way.
+
+
+## Bill of material: Tools and consumables
+
+Everything you need, down to the last washer — because nothing ruins a build
+like discovering, glue in hand, that the missing part ships from across the
+planet.
+
+
+### PCBs
+
+| Part | Qty | Notes |
+|------|-----|-------|
+| Main PCB | 1 | [EasyEDA design](../boards), [Production files](https://github.com/piwicode/bandoneo/releases) |
+| Left wing PCB | 1 | idem |
+| Right wing PCB | 1 | idem |
+
+The production files are designed for economical two-layer assembly and were
+ordered from [JLCPCB](https://jlcpcb.com/). Costs can be cut further by
+panelizing the designs into a single order.
+
+
+### Glue
+
+| Part | Qty | Notes |
+|------|-----|-------|
+| Loctite 480 | 2 drops |  |
 
 Bonds the magnet to the bellows blade spring. The magnet must not creep or
 peel, or the Hall reading drifts; and the bond sits on a blade that flexes on
-every stroke, so it must resist cyclic peel without cracking. All three are
-toughened (rubber-modified) structural adhesives that meet both.
+every stroke, so it must resist cyclic peel without cracking. 3M DP420 and
+Loctite EA 9466 are alternatives; all three are toughened (rubber-modified)
+structural adhesives that meet both.
 
 
-## Cutting the blade springs
+### Bellows spring blade
 
-- Norton Extreme steel/inox cutting disc, 125 x 1.6 mm, for an angle grinder
+| Part | Qty | Notes |
+|------|-----|-------|
+| 65Mn spring steel strip, 1.2 × 40 × 300 mm | 1 | [supplier](https://fr.aliexpress.com/item/1005006952720032.html) |
+
+The steel must be manganese-alloyed (65Mn) spring steel. Manganese gives it a
+wide elastic domain, so the blade flexes far on every bellows stroke and returns
+without taking a permanent set.
+
+A 1.5 mm strip can be used instead for extra rigidity, but the bellows model
+must be adjusted to match the stiffer blade.
+
+
+### Magnets
+
+| Part | Qty | Notes |
+|------|-----|-------|
+| Permanent magnet, 14.5 × 6 × 2 mm | 2 | |
+
+Bonded to the spring blade, the magnets move with it as it bends. A pair of
+Hall-effect sensors reads the resulting field change to measure the blade's
+flexion, which gives the force the player applies to the bellows.
+
+
+### Cutting the blade springs
+
+| Part | Qty | Notes |
+|------|-----|-------|
+| Angle grinder | 1 | 125 mm |
+| Norton Extreme steel/inox cutting disc | 1 | 125 × 1.6 mm, for an angle grinder |
 
 Cuts the spring steel to length. The disc is thin enough to keep the kerf
 narrow and the heat-affected zone small, so the steel keeps its temper at the
 cut edge.
 
-## Programming
+### Programming
 
-- ST-LINK V3 MINIE (preferred) or ST-LINK V3 SET
-- [Tag-Connect TC2070-IDC-050](https://www.tag-connect.com) cable, with 14 pogo
-  pins that contact the board's footprint directly with no mating connector
+| Part | Qty | Notes |
+|------|-----|-------|
+| ST-LINK V3 MINIE | 1 | preferred; or ST-LINK V3 SET |
+| [Tag-Connect TC2070-IDC-050](https://www.tag-connect.com) cable | 1 | 14 pogo pins that contact the board's footprint directly with no mating connector |
 
 Chosen against a J-Link because it is fast, cheap, and free of licence
 restrictions. The ST-LINK V3 also exposes a USART, which is more robust than SWO
 for logging and lets you send commands to the firmware during development. The
 MINIE has all the features needed and is cheaper than the SET.
 
-## 
+### Hexagonal keys
+
+| Part | Qty | Notes |
+|------|-----|-------|
+| Hexagonal Allen key H2 | 1 | |
+| Hexagonal Allen key H2.5 | 1 | |
+| Hexagonal Allen key H3 | 1 | |
+
+All screws can be fastened with these three hexagonal Allen keys.
+
+### PLA filament
+
+| Part | Qty | Notes |
+|------|-----|-------|
+| PLA for the body | 850 g | [Prusament PLA](https://www.prusa3d.com/category/prusament-pla/) |
+| PETG for the keys | 60 g | [Prusament PETG](https://www.prusa3d.com/category/prusament-petg/) |
+
+### Magnetic push buttons
+
+| Part | Qty | Notes |
+|------|-----|-------|
+| Hall-effect switches | 71 | [GATERON Low Profile Magnetic Jade HE](https://www.gateron.com/products/gateron-low-profile-magnetic-jade-switch?VariantsId=10872) |
+
+You can opt for lighter 30±10gf springs selecting the non "Pro" version instead.
+
+### Screws
+
+| Part | Qty | Notes |
+|------|-----|-------|
+| M4 × 30 socket head cap, stainless A2 | 4 | For the handles. [supplier](https://www.vis-express.fr/vis-metaux-inox-a2-chc-btr-cle-de-8-hc8-filetage-total-din-912-din-912-iso-4762/36756-927484-vis-metaux-inox-a2-chc-btr-cle-de-3-hc3-m4x40-filetee-sur-22.html#/267-conditionnement-200_pieces)|
+| M4 × 10 × 0.8 flat washer, stainless A2 | 4 | For the handles. [supplier](https://www.vis-express.fr/rondelle-plate-m-inox-a2-nfe-25513vs-nfe25513-grade-c/36925-940576-rondelle-plate-m4x10x08-m-inox-a2.html#/267-conditionnement-200_pieces)|
+| M3 × 6 socket head cap, stainless A2 | 19 | For PCB fastening. [supplier](https://www.vis-express.fr/vis-metaux-inox-a2-chc-btr-cle-de-8-hc8-filetage-total-din-912-din-912-iso-4762/36726-2595617-vis-metaux-inox-a2-chc-btr-cle-de-25-hc25-m3x6-filetage-total.html#/21-conditionnement-1_piece)|
+| M3 × 8 socket head cap, stainless A2 | 11 | For the main board blade clamp. [supplier](https://www.vis-express.fr/vis-metaux-inox-a2-chc-btr-cle-de-8-hc8-filetage-total-din-912-din-912-iso-4762/36728-2610009-vis-metaux-inox-a2-chc-btr-cle-de-25-hc25-m3x8-filetage-total.html#/21-conditionnement-1_piece) |
+| M3 × 12 socket head cap, stainless A2 | 4 | For the wing blade clamp. [supplier](https://www.vis-express.fr/vis-metaux-inox-a2-chc-btr-cle-de-8-hc8-filetage-total-din-912-din-912-iso-4762/36731-2616466-vis-metaux-inox-a2-chc-btr-cle-de-25-hc25-m3x12-filetage-total.html#/21-conditionnement-1_piece) |
+| M3 × 18 socket head cap, stainless A2 | 4 | For the main board enclosure. [supplier](https://www.vis-express.fr/vis-metaux-inox-a2-chc-btr-cle-de-8-hc8-filetage-total-din-912-din-912-iso-4762/36734-2596394-vis-metaux-inox-a2-chc-btr-cle-de-25-hc25-m3x18-filetage-total.html#/21-conditionnement-1_piece) |
+
+### Ribbon cable
+
+| Part | Qty | Notes |
+|------|-----|-------|
+| IDC ribbon cable, FC 1.27 mm, 12P (2×6), 10 cm | 2 | [supplier](https://fr.aliexpress.com/item/1005005058041580.html) |
+
+Connects each wing to the main board. IDC ribbon cable is available everywhere,
+and its 1.27 mm pitch keeps the connectors short. The 12 conductors give the SPI
+link spare pins for interleaved grounds (lower noise) and extra VCC lines (less
+voltage drop).
+
+
+## Step-by-step assembly
+
+### Print the parts
+
+All the parts are printed with 15% density with no support.
+
+The printable files are attached to the [GitHub releases](https://github.com/piwicode/bandoneo/releases):
+
+- `bandoneo-models-xxx.zip` — STEP files exported from the [Onshape model](https://cad.onshape.com/documents/313e70e978bf056a8dd7d76c/v/5c5fbc4088ac379c1bd1b53a/e/c6a89cb028bdc195ff70596f).
+- `xxxx - slice.3mf` — PrusaSlicer projects that reference the models already arranged on the plate.
+
+The projects print with "Complete individual objects" enabled, so each part is
+finished before the next one starts. This avoids the travel moves back and forth
+between parts, which makes the print faster and improves surface quality by
+keeping oozing and stringing off the finished parts.
+
+| Part | Count | Material | Print time | Filament |
+|------|-------|----------|-----------|----------|
+| Central body | 1 | PLA | 1 h 32 min | 40 g |
+| Central body blade clamp | 1 | PLA | 0 h 37 min | 24 g |
+| Right keyboard body | 1 | PLA | 5 h 50 min | 223 g |
+| Right keyboard cover | 1 | PLA | 1 h 21 min | 58 g |
+| Left keyboard body | 1 | PLA | 5 h 50 min | 225 g |
+| Left keyboard cover | 1 | PLA | 1 h 21 min | 58 g |
+| Left and right handles | 1 | PLA | 1 h 24 min | 62 g |
+| Set of 24 keys | 3 | PETG | 2 h 10 min | 18 g |
+| **Total** | | | **24 h 25 min** | **744 g** |
+
+<img src="images/timelapse_keys.webp" width="480" alt="Printing the keys" />
+
+<img src="images/timelapse_handles.webp" width="480" alt="Printing the handles" />
+
+
+
+### Cut the spring blade
+
+With the angle grinder and slim cutting disc, cut the 65Mn spring steel strip to a 300 mm length.
+
+<img src="images/assembly_spring_blade_cut.webp" width="480" alt="Cutting the spring blade" />
+
+Clamp the blade to a plank and keep a trickle of water running over the cut to
+carry away the heat. If the steel gets too hot it re-hardens (quenches) at the
+cut, losing the temper that gives it its elastic properties.
+
+
