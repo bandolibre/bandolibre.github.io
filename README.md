@@ -106,7 +106,7 @@ For a detailed breakdown of the firmware behavior and controls, see [`documentat
 ## Build it
 
 - **Hardware & assembly:** see [`documentation/`](documentation/)
-- **Firmware:** see [`code/`](code/) — build with `just build` from the board directory, flash via ST-LINK
+- **Firmware:** see [`code/`](code/) — build with `just build` and `just flash`, flash via ST-LINK
 
 ---
 

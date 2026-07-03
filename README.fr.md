@@ -106,7 +106,7 @@ Pour un détail du comportement du firmware et des commandes, voir [`documentati
 ## Construction
 
 - **Matériel et assemblage :** voir [`documentation/`](documentation/)
-- **Firmware :** voir [`code/`](code/) — construire avec `just build` depuis le répertoire de la carte, flasher via ST-LINK
+- **Firmware :** voir [`code/`](code/) — construire avec `just build` et `just flash`, flasher via ST-LINK
 
 ---
 

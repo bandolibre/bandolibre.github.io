@@ -4,9 +4,9 @@
 
 # Bandonéo
 
-Un controlador MIDI de código abierto que trae el bandoneón argentino a la era digital.
+Un controlador MIDI de código abierto que trae el bandoneón comunmente utilizado en Argentina a la era digital.
 
-**Bandonéo tiene un único objetivo:** convertir las pulsaciones de teclas y el movimiento del fuelle en señal MIDI — con fidelidad, sin latencia y sin el costo ni el ruido de un instrumento acústico. Conéctalo a cualquier computadora, tableta o teléfono por USB y estarás listo para tocar, componer o practicar.
+**Bandonéo tiene un único objetivo:** convertir las pulsaciones de teclas y el movimiento del fuelle en señal MIDI — con fidelidad, sin latencia y sin el costo ni el ruido de un instrumento acústico. Conéctalo a cualquier computadora, tableta o teléfono por USB y estará listo para tocar, componer o practicar.
 
 Una iniciativa abierta de [L'Atelier du bandonéon libre](https://github.com/bandolibre)
 
@@ -25,17 +25,17 @@ Mira las demos: [con un clarinete virtual](https://youtu.be/6s1wlRKlAk4) · [con
 - **Estudiantes** que aún no tienen instrumento y quieren comenzar a aprender
 - **Músicos** que quieren practicar en silencio — en casa, de viaje, a cualquier hora
 - **Compositores** que ingresan partituras nota a nota en un software de notación
-- **Músicos de escenario** que controlan sintetizadores y sampleadores en vivo o en el estudio
+- **Músicos de escenario** que controlan sintetizadores y sampleadores en vivo o en estudio
 
 ---
 
-## Cómo funciona
+## ¿Cómo funciona?
 
-- **Teclado Rheinische Lage de 142 tonos** — ambas manos, digitación exacta del bandoneón argentino
+- **Teclado Rheinische Lage de 142 tonos** — ambas manos, digitación exacta del bandoneón tradicional en Argentina
 - **Sensores de efecto Hall en cada tecla** — sin contacto mecánico, sin desgaste, 2400 lecturas por segundo
-- **Lámina resorte + sensor** para el fuelle — mide el esfuerzo de empuje y tracción y emite MIDI CC#11 (Expresión), igual que el instrumento real
+- **Lámina de resorte + sensor** para el fuelle — mide el esfuerzo de empuje y de tracción y emite MIDI CC#11 (Expresión), igual que el instrumento real
 - **Dos entradas de pedal de expresión de 6,35 mm** — compatibles con M-Audio EX-P; pedal 1 envía CC#1 (Modulación), pedal 2 envía CC#4 (Controlador de pie)
-- **USB-MIDI** de fábrica — conéctalo a cualquier DAW, software de notación o sintetizador; sin controladores necesarios
+- **USB-MIDI** de fábrica — conéctalo a cualquier DAW, software de notación o sintetizador; no necesita controladores
 
 ---
 
@@ -43,7 +43,7 @@ Mira las demos: [con un clarinete virtual](https://youtu.be/6s1wlRKlAk4) · [con
 
 **Modo mesa** — un botón activa el modo mesa: las teclas suenan inmediatamente a velocidad fija, sin necesidad de mover el fuelle. Ideal para ingresar una partitura nota a nota sin accionar el fuelle.
 
-**Toca en cualquier lugar** — Bandonéo se alimenta por el bus USB; cualquier teléfono, tableta o laptop con un sintetizador por software se convierte en el motor de sonido. Un pequeño hub USB con salida de auriculares y paso de alimentación te da audio, carga y MIDI desde un solo cable — probado y de bolsillo.
+**Toca en cualquier lugar** — Bandonéo se alimenta por el bus USB; cualquier teléfono, tableta o laptop con un sintetizador por software se convierte en el motor de sonido. Un pequeño hub USB con salida de auriculares y paso de alimentación te da audio, carga y MIDI desde un solo cable — testeado y de bolsillo.
 
 **Adaptable** — el estándar USB-MIDI es compatible con todo el ecosistema de adaptadores: conecta un adaptador USB Bluetooth MIDI para tocar de forma inalámbrica, o un adaptador USB a DIN-5 para controlar sintetizadores de hardware vintage.
 
@@ -51,9 +51,9 @@ Mira las demos: [con un clarinete virtual](https://youtu.be/6s1wlRKlAk4) · [con
 
 ## Cualquiera puede construirlo
 
-Este es un proyecto DIY completamente abierto. Los PCB están diseñados para la fabricación económica JLCPCB de dos capas — accesibles y fáciles de pedir. Las piezas mecánicas son imprimibles en 3D (un FabLab cercano funciona de maravilla). El firmware es de código abierto y se puede flashear con una sonda [ST-LINK](https://www.st.com/en/development-tools/stlink-v3minie.html) estándar y un cable [TC-2070-IDC-050](https://www.tag-connect.com/product/tc2070-idc-050).
+Este es un proyecto DIY completamente abierto. Los PCB están diseñados para la fabricación "economic PCBA" JLCPCB de dos capas — accesibles y fáciles de pedir. Las piezas mecánicas son imprimibles en 3D (un FabLab cercano funciona de maravilla). El firmware es de código abierto y se puede flashear con una sonda [ST-LINK](https://www.st.com/en/development-tools/stlink-v3minie.html) estándar y un cable [TC-2070-IDC-050](https://www.tag-connect.com/product/tc2070-idc-050).
 
-Construir uno cuesta aproximadamente lo mismo que un buen teclado MIDI o un buen par de auriculares de estudio como el DT-770 Pro.
+Construir un bandoneo cuesta aproximadamente lo mismo que un buen teclado MIDI o un buen par de auriculares de estudio como el DT-770 Pro.
 
 ---
 
@@ -76,9 +76,9 @@ Construir uno cuesta aproximadamente lo mismo que un buen teclado MIDI o un buen
 | Cable USB Type-B | 1 | |
 | Cable plano, FC 1.27 mm, 12P (2×6), 10 cm | 2 | [proveedor](https://fr.aliexpress.com/item/1005005058041580.html) |
 
-Lo ideal es construirlos en lotes de cinco — los pedidos mínimos de JLCPCB hacen de esa la unidad natural. Únete a amigos o contacta a [L'Atelier du bandonéon libre](https://github.com/bandolibre) para expresar interés en una construcción colectiva.
+Lo ideal es construirlos por lotes de cinco — los pedidos mínimos de JLCPCB hacen de esta la cantidad mas conveniente. Únete a amigos o contacta a [L'Atelier du bandonéon libre](https://github.com/bandolibre) para expresar interés en una construcción colectiva.
 
-A cincuenta unidades, la fabricación de PCB y los interruptores Gateron — las dos partidas más importantes — bajan a la mitad nuevamente.
+A partir de cincuenta unidades, la fabricación de PCB y los interruptores Gateron — las dos partidas más importantes — el costo baja a la mitad nuevamente.
 
 ---
 
@@ -93,11 +93,11 @@ Las piezas mecánicas están modeladas en Onshape — [el modelo 3D completo](ht
 Los PCB están diseñados con EasyEDA.
 ![3d_pcb](documentation/images/pcb_main_board_3d.png)
 
-El fuelle es reemplazado por una **lámina resorte instrumentada con dos sensores de efecto Hall** que leen su flexión. Las soluciones basadas en celdas de carga fueron descartadas — son demasiado rígidas y eliminan el feedback táctil que los bandoneonistas necesitan para sentir y modular su esfuerzo — es como presionar contra una pared. La lámina resorte preserva ese feedback propioceptivo siendo a la vez simple y duradera. El grosor de la lámina puede elegirse para ajustar la rigidez del instrumento, de suave a firme.
+El fuelle es reemplazado por una **lámina de resorte equipada con dos sensores de efecto Hall** que leen su flexión. Las soluciones basadas en celdas de carga fueron descartadas — demasiado rígidas, eliminan el feedback táctil que los bandoneonistas necesitan para sentir y modular su esfuerzo — es como presionar contra una pared. La lámina resorte preserva ese feedback propioceptivo siendo a la vez simple y duradera. El grosor de la lámina puede elegirse para ajustar la rigidez del instrumento, de suave a firme.
 
 ![lámina resorte](documentation/images/bandoneo_blade.webp)
 
-Un botón selector de sensibilidad permite ciclar entre tres niveles de amplificación para ajustar cuánto recorrido de fuelle se necesita para alcanzar la expresión máxima — útil para tocar suave o con una lámina más rígida.
+Un botón selector de sensibilidad permite selectionar entre tres niveles de amplificación para ajustar cuánto recorrido de fuelle se necesita para alcanzar la máxima expresión — útil para tocar suave.
 
 Para un desglose detallado del comportamiento del firmware y los controles, ver [`documentation/features.md`](documentation/features.md).
 
@@ -106,22 +106,22 @@ Para un desglose detallado del comportamiento del firmware y los controles, ver 
 ## Construcción
 
 - **Hardware y ensamblado:** ver [`documentation/`](documentation/)
-- **Firmware:** ver [`code/`](code/) — compilar con `just build` desde el directorio de la placa, flashear via ST-LINK
+- **Firmware:** ver [`code/`](code/) — compilar con `just build` y `just flash` para flashear via ST-LINK
 
 ---
 
-## Dónde estamos
+## ¿Cómo queda?
 
 ![Bandoneo overview](documentation/images/bandoneo_overview.webp)
 ![Bandoneo main module](documentation/images/bandoneo_main_module.webp)
 
-Cinco unidades están construidas y funcionando. El firmware maneja las 142 teclas, el fuelle empuje/tracción, los pedales y la salida MIDI de forma confiable. Estos instrumentos están actualmente prestados a profesores de bandoneón que nos dan retroalimentación práctica mientras pulimos el software.
+Cinco unidades fueron construidas y están funcionando. El firmware maneja las 142 teclas, el fuelle empuje/tracción, los pedales y la salida MIDI de forma confiable. Estos cinco instrumentos están actualmente prestados a profesores de bandoneón que nos dan retroalimentación práctica mientras pulimos el software.
 
-Los modelos 3D y los diseños de PCB son sólidos — no hay revisiones planificadas. El foco activo ahora es afinar la simulación del fuelle: lograr que el modelo de inercia haga que las notas cortas se sientan como en el instrumento real, no como un sensor.
+Los modelos 3D y los diseños de PCB son sólidos — no hay revisiones planificadas. El foco esta puesto ahora en afinar la simulación del fuelle: lograr que el modelo de inercia haga que las notas cortas se sientan como en el instrumento real, no como un sensor.
 
-Hay mucho por explorar en el lado del software. Dado que los sensores de efecto Hall miden la posición de las teclas de forma continua — no solo encendido/apagado — el firmware tiene acceso al recorrido completo de cada tecla en todo momento. Esto abre la puerta al **MPE (MIDI Polyphonic Expression)**: curvas de presión, deslizamiento y levantamiento por nota, de forma independiente para cada una de las 142 teclas simultáneamente.
+Hay mucho por explorar respecto del software. Dado que los sensores de efecto Hall miden la posición de las teclas de forma continua — no solo encendido/apagado — el firmware tiene acceso al recorrido completo de cada tecla en todo momento. Esto abre la puerta al **MPE (MIDI Polyphonic Expression)**: curvas de presión, deslizamiento y levantamiento por nota, de forma independiente para cada una de las 142 teclas simultáneamente.
 
-Bandonéo funciona brillantemente con [Native Instruments Session Strings](https://www.native-instruments.com/en/products/komplete/orchestral/session-strings-2/). Dicho esto, estamos buscando activamente instrumentos virtuales con soporte expresivo profundo — rica polifonía y CC#11 como controlador principal de articulación. Si conoces alguno, o quieres ayudar a construir algo hecho a medida para el bandoneón, sugerencias y contribuciones son muy bienvenidas.
+Bandonéo funciona brillantemente con [Native Instruments Session Strings](https://www.native-instruments.com/en/products/komplete/orchestral/session-strings-2/). Dicho esto, estamos buscando activamente instrumentos virtuales con soporte expresivo profundo — rica polifonía y CC#11 como controlador principal de articulación. Si conoces alguno, o quieres ayudar a construir algo hecho a medida para el bandoneón, las sugerencias y contribuciones son mas que bienvenidas.
 
 ---
 
