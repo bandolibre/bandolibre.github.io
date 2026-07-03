@@ -5,17 +5,9 @@ The Bandoneo is meant to be built. It exists so that anyone, anywhere in the
 world, can make one if they want to — this page walks you through everything it
 takes.
 
-<script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+[![Bandoneo 3D model](images/bandoneo_turntable.webp)](https://cad.onshape.com/documents/313e70e978bf056a8dd7d76c/v/5c5fbc4088ac379c1bd1b53a/e/c6a89cb028bdc195ff70596f)
 
-<model-viewer
-  src="models/Bandoneo.glb"
-  alt="Bandoneo 3D model"
-  camera-controls
-  auto-rotate
-  shadow-intensity="1"
-  style="width: 100%; height: 480px;">
-  <a href="models/Bandoneo.glb">View the Bandoneo 3D model</a>
-</model-viewer>
+*Click the model to open the interactive 3D view.*
 
 
 If you take that journey, don't be a stranger: let us know how it goes. We'd
@@ -196,4 +188,37 @@ Clamp the blade to a plank and keep a trickle of water running over the cut to
 carry away the heat. If the steel gets too hot it re-hardens (quenches) at the
 cut, losing the temper that gives it its elastic properties.
 
+
+### Assemble keyboards
+
+1. Push the keycaps onto the Gateron push-button switches.
+2. Lay out the components on the table: place the keyboard PCB on the ESD mat, with the switches and keycaps within reach. Double-check the connectors are covered with a protection to avoid bending the pins.
+
+<img src="images/assembly_keyboard_pcb.webp" width="480" alt="Keyboard PCB on the ESD mat with switches and keycaps" />
+
+3. Place the push buttons on the back of the board. Orient each one so the crystal aligns with the silkscreen drawing, so that the magnet sits in front of the sensor.
+
+<img src="images/assembly_keyboard_pcb_with_bt.webp" width="480" alt="Push buttons placed on the back of the keyboard board" />
+
+4. Hold the board by its component side and bring the printed keyboard body down onto it, guiding every switch through its matching hole in one motion. Seat the board fully so each switch clears its hole and the keycaps stand proud of the front face.
+
+<img src="images/assembly_keyboard_animation.webp" width="480" alt="Sliding the keyboard body over the switches" />
+
+### Assemble the main board
+
+1. Set the clamp at the exact midpoint of the 300 mm blade, so both free ends flex symmetrically under the bellows load.
+2. Fasten the clamp with 3 M3×12 screws.
+
+<img src="images/assembly_blade_clamp_1.webp" width="480" alt="Spring blade clamped at its midpoint" />
+
+3. Find the magnet's blade-facing polarity: press a spare Gateron switch to arm its sensor, then check which magnet face its back attracts. That face goes against the blade.
+4. Fit the magnet guide, add a drop of glue to each seat, and set a magnet — attracted face down — into each. The guide aligns the magnet with its Hall sensor; the glue resists the cyclic peel of every bellows stroke.
+
+<img src="images/assembly_blade_clamp_2.webp" width="480" alt="Gluing the magnets into the guide on the blade" />
+
+5. Once the glue has cured, lift the magnet guide off the magnets.
+6. Set the main board onto its support.
+7. Fasten it with 3 M3×6 screws.
+
+<img src="images/assembly_main_board.webp" width="480" alt="Main board fastened to its support" />
 
