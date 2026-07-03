@@ -23,11 +23,12 @@ def read_uid(serial: str | None = None) -> str:
             cmd + ["read", f.name, hex(UID_ADDR), str(UID_LEN)],
             capture_output=True,
         )
-        if result.returncode != 0:
+        uid = Path(f.name).read_bytes().hex()
+        if result.returncode != 0 or not uid or set(uid) <= {"0", "f"}:
             label = f"ST-Link {serial}" if serial else "connected board"
             print(f"Error: could not read from {label}. Is the board connected and powered?", file=sys.stderr)
             sys.exit(1)
-        return Path(f.name).read_bytes().hex()
+        return uid
 
 
 def load_registry() -> dict[str, str]:
