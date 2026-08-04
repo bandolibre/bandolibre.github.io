@@ -1,4 +1,3 @@
-Boards can be programmed with [STLINK-V3MINIE](https://www.st.com/en/development-tools/stlink-v3minie.htm).
 
 # Connecting the debugger probe
 
