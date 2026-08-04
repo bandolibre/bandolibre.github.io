@@ -76,6 +76,8 @@ Construir un bandoneo cuesta aproximadamente lo mismo que un buen teclado MIDI o
 | Cable USB Type-B | 1 | |
 | Cable plano, FC 1.27 mm, 12P (2×6), 10 cm | 2 | [proveedor](https://fr.aliexpress.com/item/1005005058041580.html) |
 
+La lista completa, incluidas herramientas y consumibles, está en [`documentation/assembly_instructions.md`](documentation/assembly_instructions.md).
+
 Lo ideal es construirlos por lotes de cinco — los pedidos mínimos de JLCPCB hacen de esta la cantidad mas conveniente. Únete a amigos o contacta a [L'Atelier du bandonéon libre](https://github.com/bandolibre) para expresar interés en una construcción colectiva.
 
 A partir de cincuenta unidades, la fabricación de PCB y los interruptores Gateron — las dos partidas más importantes — el costo baja a la mitad nuevamente.
@@ -105,7 +107,7 @@ Para un desglose detallado del comportamiento del firmware y los controles, ver 
 
 ## Construcción
 
-- **Hardware y ensamblado:** ver [`documentation/`](documentation/)
+- **Hardware y ensamblado:** ver [`documentation/assembly_instructions.md`](documentation/assembly_instructions.md)
 - **Firmware:** ver [`code/`](code/) — compilar con `just build` y `just flash` para flashear via ST-LINK
 
 ---

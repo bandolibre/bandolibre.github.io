@@ -76,6 +76,8 @@ Building one costs about as much as a decent MIDI keyboard or a good pair of stu
 | USB Type-B cable | 1 | |
 | Ribbon cable, FC 1.27 mm, 12P (2×6), 10 cm | 2 | [supplier](https://fr.aliexpress.com/item/1005005058041580.html) |
 
+The full list, including tools and consumables, is in [`documentation/assembly_instructions.md`](documentation/assembly_instructions.md).
+
 They are best built in batches of five — JLCPCB minimum orders make that the natural unit. Team up with friends or reach out to [L'Atelier du bandonéon libre](https://github.com/bandolibre) to express interest in a community build.
 
 At fifty units, PCB fabrication and Gateron switches — the two biggest line items — drop by half again.
@@ -105,7 +107,7 @@ For a detailed breakdown of the firmware behavior and controls, see [`documentat
 
 ## Build it
 
-- **Hardware & assembly:** see [`documentation/`](documentation/)
+- **Hardware & assembly:** see [`documentation/assembly_instructions.md`](documentation/assembly_instructions.md)
 - **Firmware:** see [`code/`](code/) — build with `just build` and `just flash`, flash via ST-LINK
 
 ---
