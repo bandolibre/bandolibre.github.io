@@ -1,8 +1,5 @@
 Boards can be programmed with [STLINK-V3MINIE](https://www.st.com/en/development-tools/stlink-v3minie.htm).
 
-Editor and SWO setup are covered separately in
-[Development environment](development_environment.md).
-
 # Connecting the debugger probe
 
 Plug the ST-Link into a USB port and verify the device is detected:
