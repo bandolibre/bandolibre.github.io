@@ -1,40 +1,30 @@
-Boards can be programmed with [STLINK-V3MINIE](https://www.st.com/en/development-tools/stlink-v3minie.htm)
+Boards can be programmed with [STLINK-V3MINIE](https://www.st.com/en/development-tools/stlink-v3minie.htm).
 
-# Command library
+Editor and SWO setup are covered separately in
+[Development environment](development_environment.md).
 
-I use [`just`](https://just.systems/) to run commands from a confiugration
-file such as `code/main-g474/justfile`
-```
-cargo install just
-```
+# Connecting the debugger probe
 
-# Connecting the debugger probe:
-
-Plug STLink to a usb port and verify the device is detected:
+Plug the ST-Link into a USB port and verify the device is detected:
 
 ```
 $ lsusb | grep STLINK
 Bus 001 Device 070: ID 0483:3754 STMicroelectronics STLINK-V3
 ```
 
-Install [stlink-tools](https://github.com/stlink-org/stlink) version >= 1.8 with
-
-```
-apt install stlink-tools
-```
-
-or if your distrib version is too old:
+Install [stlink-tools](https://github.com/stlink-org/stlink) from source, in a
+directory next to your `bandoneo` checkout:
 
 ```
 sudo apt remove stlink-tools
 sudo apt install build-essential cmake libusb-1.0-0-dev
 git clone --depth 1 --branch testing https://github.com/stlink-org/stlink
 cd stlink
-git apply documentation/0001-fix-st-trace-fix-SWO-trace-on-STLINK-V3-HS-bulk-endp.patch
+git apply ../bandoneo/documentation/0001-fix-st-trace-fix-SWO-trace-on-STLINK-V3-HS-bulk-endp.patch
 make release && sudo make install && sudo ldconfig
 ```
 
-Once the stlink is plugged to the board:
+Once the ST-Link is plugged into the board:
 
 ```
 $ st-info --probe
@@ -47,64 +37,60 @@ Found 1 stlink programmers
   dev-type:   STM32G47x_G48x
 ```
 
-# Build the code
+# Install build prerequisites
 
-Prerequisite:
+The ARM toolchain and the build backend:
 
 ```
 sudo apt install gcc-arm-none-eabi ninja-build
 ```
 
+I use [`just`](https://just.systems/) to run commands from a configuration file
+such as `code/main-g474/justfile`:
+
+```
+cargo install just
+```
+
+# Build the firmware
+
+Generate the build system once, then build:
+
 ```
 cd code/main-g474
-cmake --preset Debug
-cmake --build --preset Debug
+just init_build
+just build
 ```
 
-# Flash the code
+Re-run `just init_build` after adding or removing source files, or after
+changing `CMakeLists.txt`.
+
+# Flash the firmware
+
+Flashing wing firmware onto a main board — or the reverse — drives pins against
+the connected hardware and can damage the boards, so a chip must be registered
+before it can be flashed. `code/tool/boards.csv` maps each STM32 unique device
+ID to its board type, and is checked before every flash.
+
+Register a board once, before its first flash:
 
 ```
-arm-none-eabi-objcopy -O binary build/Debug/main-g474.elf build/Debug/main-g474.bin
-st-flash write build/Debug/main-g474.bin 0x08000000
+cd code/main-g474
+just registry_add
 ```
 
-0x08000000 is the STM32G4's internal flash base address (matches STM32G474XX_FLASH.ld).
-
-# Read SWO debug text stream
-
-
-Characters written to `ITM_SendChar` show show up in a view names
-`SWV ITM Data Console`, but the configuration button does not work, and that
-falls short.
+Then flash with:
 
 ```
-st-trace --clock=16m
+cd code/main-g474
+just flash
 ```
 
-Warning: This requires a patch (0001-fix-st-trace-fix-SWO-trace-on-STLINK-V3-HS-bulk-endp.patch) otherwise it will fail with `2026-06-08T23:00:36 ERROR usb.c: read_trace insufficient buffer length`
+`just flash` programs every connected ST-Link whose chip is registered as that
+board type, so both wings can be flashed in a single command.
 
+The same recipes apply in `code/wing-g474`.
 
-## OpenOCD Fails
-```bash
-$ openocd -f interface/stlink.cfg -f target/stm32g4x.cfg \
-  -c "tpiu config internal swo.log uart off 16000000 2000000" \
-  -c "init" -c "reset"
-```
-
-Fails with `Error: libusb_bulk_read error: LIBUSB_ERROR_OVERFLOW`
-
-## In STM32CubeIde Fails
-
-* In STM32Cube IDE debug configuration enable SWO and use the `To CPU1 FCLK`
-  speed as Core Clock speed, that is to say 4MHz.
-* Then add in "Windows" > Show View > SDW > SDW ITM Data Console
-* Enable ITM Stimulus Port 0 in the parameter of this view, and finally press
-  the red button.
-
-Fails with `SWV info, Failed to read data!!!`
-
-Reference:
-- https://www.youtube.com/watch?v=j-GaEZKrkbQ
 
 # Read UART debug console
 
@@ -122,17 +108,6 @@ The glob resolves to the correct `/dev/ttyACMx` regardless of what other USB ser
 just console
 ```
 
-Press ctrl-t q to quit.
-
-# Development environement
-
-I use VSCode with `clangd` rather than `intelliSenseEngine` because it reads `compile_commands.json` directly — correct ARM toolchain headers, exact build flags, no manual config. 
-
-Make sure clangd is installed on your system:
-
-```bash
-sudo apt-get install -y clangd && clangd --version
-```
-
+Press `ctrl-t q` to quit.
 
 

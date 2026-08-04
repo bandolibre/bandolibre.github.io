@@ -90,6 +90,7 @@ cut edge.
 |------|-----|-------|
 | ST-LINK V3 MINIE | 1 | preferred; or ST-LINK V3 SET |
 | [Tag-Connect TC2070-IDC-050](https://www.tag-connect.com) cable | 1 | 14 pogo pins that contact the board's footprint directly with no mating connector |
+| USB-B to USB-A cable | 1 | Powers the main board while programming, and carries MIDI to the host |
 
 Chosen against a J-Link because it is fast, cheap, and free of licence
 restrictions. The ST-LINK V3 also exposes a USART, which is more robust than SWO
@@ -131,6 +132,7 @@ You can opt for lighter 30±10gf springs selecting the non "Pro" version instead
 | M3 × 8 socket head cap, stainless A2 | 11 | For the main board blade clamp. [supplier](https://www.vis-express.fr/vis-metaux-inox-a2-chc-btr-cle-de-8-hc8-filetage-total-din-912-din-912-iso-4762/36728-2610009-vis-metaux-inox-a2-chc-btr-cle-de-25-hc25-m3x8-filetage-total.html#/21-conditionnement-1_piece) |
 | M3 × 12 socket head cap, stainless A2 | 4 | For the wing blade clamp. [supplier](https://www.vis-express.fr/vis-metaux-inox-a2-chc-btr-cle-de-8-hc8-filetage-total-din-912-din-912-iso-4762/36731-2616466-vis-metaux-inox-a2-chc-btr-cle-de-25-hc25-m3x12-filetage-total.html#/21-conditionnement-1_piece) |
 | M3 × 18 socket head cap, stainless A2 | 4 | For the main board enclosure. [supplier](https://www.vis-express.fr/vis-metaux-inox-a2-chc-btr-cle-de-8-hc8-filetage-total-din-912-din-912-iso-4762/36734-2596394-vis-metaux-inox-a2-chc-btr-cle-de-25-hc25-m3x18-filetage-total.html#/21-conditionnement-1_piece) |
+| M3 × 5 flat head | 4 | For the handle straps. [supplier](https://fr.aliexpress.com/item/4001072025844.html) |
 
 ### Ribbon cable
 
@@ -221,4 +223,32 @@ cut, losing the temper that gives it its elastic properties.
 7. Fasten it with 3 M3×6 screws.
 
 <img src="images/assembly_main_board.webp" width="480" alt="Main board fastened to its support" />
+
+### Program the main board
+
+8. Connect the main board to a USB port with the USB-B to USB-A cable. The
+   ST-LINK V3 can power the board on its own as long as the wings are
+   disconnected, but powering it over USB is safer.
+9. Plug the TC2070-IDC-050 cable into the board footprint and into the ST-LINK
+   V3, then connect the ST-LINK V3 to your workstation.
+
+<img src="images/assembly_main_programming.webp" width="480" alt="Main board connected to the ST-LINK V3 through the Tag-Connect cable" />
+
+10. Flash the board following [Programming boards](programming_boards.md).
+
+### Fit the handle straps
+
+Velcro tape makes cheap adjustable handle straps.
+
+<img src="images/assembly_handle_strap.webp" width="480" alt="Velcro tape cut to length for a handle strap" />
+
+11. Attach the velcro tape to each handle with two M3 × 5 flat head screws.
+
+<img src="images/assembly_handle.webp" width="480" alt="Velcro strap screwed onto a printed handle" />
+
+12. Fix the left and right handles to their keyboards with two M4 × 30 socket
+   head cap screws and washers each.
+
+The handle position is adjustable; the median position matches the original
+instrument.
 
