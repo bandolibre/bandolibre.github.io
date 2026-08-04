@@ -14,6 +14,10 @@ If you take that journey, don't be a stranger: let us know how it goes. We'd
 love to hear about your progress, see your build, and learn from what you
 discover along the way.
 
+Don't worry if a picture doesn't quite match what you have in front of you: the
+photos were taken in a slightly different assembly order. The text is the
+reference.
+
 
 ## Bill of material: Tools and consumables
 
@@ -209,11 +213,11 @@ cut, losing the temper that gives it its elastic properties.
 ### Assemble the main board
 
 1. Set the clamp at the exact midpoint of the 300 mm blade, so both free ends flex symmetrically under the bellows load.
-2. Fasten the clamp with 3 M3×12 screws.
+2. Fasten the clamp with 3 M3×8 screws.
 
 <img src="images/assembly_blade_clamp_1.webp" width="480" alt="Spring blade clamped at its midpoint" />
 
-3. Find the magnet's blade-facing polarity: press a spare Gateron switch to arm its sensor, then check which magnet face its back attracts. That face goes against the blade.
+3. Find the magnet's blade-facing polarity: press a spare Gateron switch to bring its internal magnet down against the bottom of the housing, then check which face of a bellows magnet that bottom attracts. That face goes against the blade.
 4. Fit the magnet guide, add a drop of glue to each seat, and set a magnet — attracted face down — into each. The guide aligns the magnet with its Hall sensor; the glue resists the cyclic peel of every bellows stroke.
 
 <img src="images/assembly_blade_clamp_2.webp" width="480" alt="Gluing the magnets into the guide on the blade" />
@@ -224,31 +228,55 @@ cut, losing the temper that gives it its elastic properties.
 
 <img src="images/assembly_main_board.webp" width="480" alt="Main board fastened to its support" />
 
-### Program the main board
-
-8. Connect the main board to a USB port with the USB-B to USB-A cable. The
-   ST-LINK V3 can power the board on its own as long as the wings are
-   disconnected, but powering it over USB is safer.
-9. Plug the TC2070-IDC-050 cable into the board footprint and into the ST-LINK
-   V3, then connect the ST-LINK V3 to your workstation.
-
-<img src="images/assembly_main_programming.webp" width="480" alt="Main board connected to the ST-LINK V3 through the Tag-Connect cable" />
-
-10. Flash the board following [Programming boards](programming_boards.md).
-
 ### Fit the handle straps
 
 Velcro tape makes cheap adjustable handle straps.
 
 <img src="images/assembly_handle_strap.webp" width="480" alt="Velcro tape cut to length for a handle strap" />
 
-11. Attach the velcro tape to each handle with two M3 × 5 flat head screws.
+1. Attach the velcro tape to each handle with two M3 × 5 flat head screws.
 
 <img src="images/assembly_handle.webp" width="480" alt="Velcro strap screwed onto a printed handle" />
 
-12. Fix the left and right handles to their keyboards with two M4 × 30 socket
+2. Fix the left and right handles to their keyboards with two M4 × 30 socket
    head cap screws and washers each.
 
 The handle position is adjustable; the median position matches the original
 instrument.
 
+### Fasten the wings to the blade
+
+1. Bring each assembled keyboard up to the blade and slide the blade into its
+   wing clamp. The blade should be a snug fit.
+2. Fasten each clamp with two M3 × 12 screws.
+
+<img src="images/assembly_wing_clamp.webp" width="480" alt="Wing clamp" />
+
+3. Connect the IDC ribbon cables, keeping them flat and untwisted. The
+   connectors are not keyed: the cable is symmetrical, so either end fits either
+   board.
+
+<img src="images/assembly_wing_cable.webp" width="480" alt="Wing cable" />
+
+### Program the main board
+
+1. Connect the main board to a USB port with the USB-B to USB-A cable. An orange
+   power indicator lights up. The ST-LINK V3 can power the board on its own only
+   while the wings are disconnected; now that everything is wired, the board must
+   be powered over USB.
+2. Plug the TC2070-IDC-050 cable into the board footprint and into the ST-LINK
+   V3, then connect the ST-LINK V3 to your workstation.
+
+<img src="images/assembly_wing_programming.webp" width="480" alt="Main board connected to the ST-LINK V3 through the Tag-Connect cable" />
+<img src="images/assembly_main_programming.webp" width="480" alt="Main board connected to the ST-LINK V3 through the Tag-Connect cable" />
+
+1. Flash the board following [Programming boards](programming_boards.md).
+2. Unplug the ST-LINK V3, then the USB cable.
+
+### Play and share
+
+Your workstation should now detect the bandoneon as a USB MIDI device. Check
+that every key and both bellows sensors behave as intended before fitting the
+enclosure — everything is still accessible at this stage.
+
+Then play it, and send us a picture of your build.
