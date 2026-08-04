@@ -45,6 +45,12 @@ I use [`just`](https://just.systems/) to run commands from a configuration file
 such as `code/main-g474/justfile`:
 
 ```
+curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to DEST
+```
+
+or
+
+```
 cargo install just
 ```
 
