@@ -112,6 +112,18 @@ Pour un détail du comportement du firmware et des commandes, voir [`documentati
 
 ---
 
+## Le son
+
+Ce qui fonctionne le mieux jusqu'ici, ce sont les instruments de simulation de la gamme **SWAM** d'[Audio Modeling](https://audiomodeling.com/) : ils reposent sur une modélisation physique plutôt que sur des échantillons, et le CC#11 pilote donc le modèle lui-même en continu. L'intensité du soufflet ressort en véritables nuances — un timbre qui change avec la pression, des notes qui enflent et s'éteignent sous le soufflet — au lieu d'un simple fondu de volume sur un échantillon figé. [Native Instruments Session Strings](https://www.native-instruments.com/en/products/komplete/orchestral/session-strings-2/) donne également d'excellents résultats.
+
+Curieusement, les bibliothèques de bandonéon modernes nous conviennent mal. Soit elles supposent une disposition de clavier inadaptée — mappages chromatiques ou d'accordéon, sans distinction poussé/tiré — soit elles n'offrent qu'un support superficiel du CC#11, avec des nuances figées dans des échantillons déclenchés à la vélocité, que le soufflet ne peut plus remodeler une fois la note lancée.
+
+Pour travailler — et en particulier sur téléphone — une simple soundfont GM va déjà loin : [European Bandoneon V2.5 de Jörg Bleymehl](https://musical-artifacts.com/artifacts/1862) donne de bons résultats. Elle se charge dans n'importe quel lecteur SF2, ne coûte presque rien en CPU, et transforme un téléphone ou une tablette en instrument de travail utilisable, sans ordinateur portable ni hôte de plugins.
+
+Nous cherchons donc activement des instruments virtuels avec un support expressif profond — polyphonie riche et CC#11 comme pilote d'articulation principal. Si vous en connaissez un, ou souhaitez aider à construire quelque chose de taillé pour le bandonéon, suggestions et contributions sont les bienvenues.
+
+---
+
 ## Où en sommes-nous
 
 ![Bandolibre overview](documentation/images/bandoneo_overview.webp)
@@ -123,7 +135,7 @@ Les modèles 3D et les conceptions de PCB sont solides — aucune révision pré
 
 Il reste beaucoup à explorer côté logiciel. Parce que les capteurs à effet Hall mesurent en continu la position des touches — pas seulement ouvert/fermé — le firmware a accès à la course complète de chaque touche à tout moment. Cela ouvre la voie au **MPE (MIDI Polyphonic Expression)** : courbes de pression, de glissé et de relâché par note, indépendamment pour chacune des 142 touches simultanément.
 
-Bandolibre fonctionne brillamment avec [Native Instruments Session Strings](https://www.native-instruments.com/en/products/komplete/orchestral/session-strings-2/). Cela dit, nous cherchons activement des instruments virtuels avec un support expressif profond — polyphonie riche et CC#11 comme pilote d'articulation principal. Si vous en connaissez un, ou souhaitez aider à construire quelque chose de taillé pour le bandonéon, suggestions et contributions sont les bienvenues.
+Bandolibre reste un projet DIY : les plans sont ouverts et chacun peut en construire un. Ce qui manque, c'est le cadre administratif qui permettrait à l'association de conclure une transaction — céder des cartes, un kit ou un instrument fini à quelqu'un qui le demande. C'est encore à quelques mois, il n'y a donc rien à organiser aujourd'hui. Si vous souhaitez que nous vous prévenions quand ce sera possible, [laissez vos coordonnées sur ce formulaire](https://forms.gle/amgxEX4XTy9Jfd538). Cela nous aide aussi à voir combien de personnes sont intéressées, et ce qu'elles aimeraient en jouer. Vos réponses restent au sein de l'association et servent uniquement à vous recontacter au sujet de Bandolibre.
 
 ---
 
