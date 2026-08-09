@@ -5,10 +5,7 @@
 			"path": "."
 		},
 		{
-			"path": "../STM32CubeG4"
-		},
-		{
-			"path": "../bandolibre.github.io"
+			"path": "../site"
 		}
 	],
 	"settings": {
