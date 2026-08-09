@@ -1,12 +1,12 @@
-![Bandoneo keyboard](documentation/images/3dmodel_keyboard_tilt.webp)
+![Bandolibre keyboard](documentation/images/3dmodel_keyboard_tilt.webp)
 
 🇬🇧 **English** | 🇫🇷 [Français](README.fr.md) | 🇪🇸 [Español](README.es.md)
 
-# Bandonéo
+# Bandolibre
 
 An open-source MIDI controller that brings the Argentine bandoneon into the digital age.
 
-**Bandonéo focuses on one goal:** turning key presses and bellows movement into MIDI — faithfully, instantly, and without the cost or noise of an acoustic instrument. Plug it into any computer, tablet, or phone over USB and you're ready to play, compose, or practice.
+**Bandolibre focuses on one goal:** turning key presses and bellows movement into MIDI — faithfully, instantly, and without the cost or noise of an acoustic instrument. Plug it into any computer, tablet, or phone over USB and you're ready to play, compose, or practice.
 
 An open initiative by [L'Atelier du bandonéon libre](https://github.com/bandolibre)
 
@@ -14,7 +14,7 @@ An open initiative by [L'Atelier du bandonéon libre](https://github.com/bandoli
 
 ## See it play
 
-[![Bandonéo demo with a clarinet virtual instrument](https://img.youtube.com/vi/6s1wlRKlAk4/maxresdefault.jpg)](https://youtu.be/6s1wlRKlAk4)
+[![Bandolibre demo with a clarinet virtual instrument](https://img.youtube.com/vi/6s1wlRKlAk4/maxresdefault.jpg)](https://youtu.be/6s1wlRKlAk4)
 
 Watch the demos: [with a clarinet virtual instrument](https://youtu.be/6s1wlRKlAk4) · [with strings virtual instruments](https://youtu.be/nJ0j7DtbYDk).
 
@@ -43,7 +43,7 @@ Watch the demos: [with a clarinet virtual instrument](https://youtu.be/6s1wlRKlA
 
 **Table mode** — a button toggles table mode: keys fire immediately at fixed velocity, no bellows movement required. Handy for entering a score note by note without working the bellows.
 
-**Play anywhere** — Bandonéo is bus-powered over USB; any phone, tablet, or laptop with a soft synth becomes the sound engine. A small USB hub with a headphone jack and a power pass-through gives you audio, charging, and MIDI from a single cable — tested and pocket-sized.
+**Play anywhere** — Bandolibre is bus-powered over USB; any phone, tablet, or laptop with a soft synth becomes the sound engine. A small USB hub with a headphone jack and a power pass-through gives you audio, charging, and MIDI from a single cable — tested and pocket-sized.
 
 **Adaptable** — standard USB-MIDI is compatible with the whole adapter ecosystem: plug in a USB Bluetooth MIDI adapter to play wirelessly, or a USB-to-DIN-5 adapter to drive vintage hardware synths.
 
@@ -114,8 +114,8 @@ For a detailed breakdown of the firmware behavior and controls, see [`documentat
 
 ## Where we are
 
-![Bandoneo overview](documentation/images/bandoneo_overview.webp)
-![Bandoneo main module](documentation/images/bandoneo_main_module.webp)
+![Bandolibre overview](documentation/images/bandoneo_overview.webp)
+![Bandolibre main module](documentation/images/bandoneo_main_module.webp)
 
 Five units are built and working. The firmware handles all 142 keys, bellows push/pull, pedals, and MIDI output reliably. These instruments are currently on loan to bandoneon teachers who are giving us hands-on feedback while we polish the software.
 
@@ -123,7 +123,7 @@ The 3D models and PCB designs are solid — no rework planned there. The active 
 
 There is a lot to explore on the software side. Because Hall-effect sensors measure key position continuously — not just on/off — the firmware has access to the full travel of every key at all times. This opens the door to **MPE (MIDI Polyphonic Expression)**: per-note pressure, slide, and lift curves, independently for each of the 142 keys simultaneously.
 
-Bandonéo works brilliantly with [Native Instruments Session Strings](https://www.native-instruments.com/en/products/komplete/orchestral/session-strings-2/). That said, we are actively looking for virtual instruments with deep expressive support — rich polyphony and CC#11 as a primary articulation driver. If you know of one, or want to help build something tailored to the bandoneon, suggestions and contributions are very welcome.
+Bandolibre works brilliantly with [Native Instruments Session Strings](https://www.native-instruments.com/en/products/komplete/orchestral/session-strings-2/). That said, we are actively looking for virtual instruments with deep expressive support — rich polyphony and CC#11 as a primary articulation driver. If you know of one, or want to help build something tailored to the bandoneon, suggestions and contributions are very welcome.
 
 ---
 

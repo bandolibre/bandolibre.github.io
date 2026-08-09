@@ -180,7 +180,7 @@ void console_init(UART_HandleTypeDef *huart, IRQn_Type irqn)
 {
   console_uart = huart;
 
-  printf("\r\n=== Bandonéo Console ===\r\n");
+  printf("\r\n=== Bandolibre Console ===\r\n");
   fflush(stdout);
 
   if (!NVIC_GetEnableIRQ(irqn)) {

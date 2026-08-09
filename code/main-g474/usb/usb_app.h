@@ -1,5 +1,5 @@
 /*
- * TinyUSB application glue for the Bandoneo main board.
+ * TinyUSB application glue for the Bandolibre main board.
  * Composite device: MIDI + CDC mirror of the microrl console.
  */
 

@@ -101,7 +101,7 @@ int console_execute(int argc, const char * const *argv)
   printf("\r\n");
   if (strcmp(argv[0], "hello") == 0)
   {
-    printf("Hello, Bandoneo!\r\n");
+    printf("Hello, Bandolibre!\r\n");
   }
   else if (strcmp(argv[0], "midi") == 0)
   {

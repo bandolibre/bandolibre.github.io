@@ -1,5 +1,5 @@
 /*
- * USB descriptors for the Bandoneo main board.
+ * USB descriptors for the Bandolibre main board.
  * Composite full-speed device: MIDI + CDC (console mirror).
  */
 
@@ -87,7 +87,7 @@ enum {
 // Strings are UTF-8 encoded and converted to UTF-16 on request.
 static char const *string_desc_arr[] = {
   (const char[]) { 0x09, 0x04 },  // 0: supported language is English (0x0409)
-  "Bandon\xc3\xa9o",                     // 2: Product
+  "Bandolibre",                   // 2: Product
   "L'Atelier du Bandon\xc3\xa9on Libre",  // 1: Manufacturer
   NULL,                           // 3: Serial, derived from the chip UID
 };

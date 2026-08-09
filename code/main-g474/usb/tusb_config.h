@@ -1,5 +1,5 @@
 /*
- * TinyUSB configuration for the Bandoneo main board (STM32G474, USB FS device).
+ * TinyUSB configuration for the Bandolibre main board (STM32G474, USB FS device).
  * Composite device: MIDI + CDC (console mirror).
  */
 

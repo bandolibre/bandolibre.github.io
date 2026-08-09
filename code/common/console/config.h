@@ -1,5 +1,5 @@
 /*
- * microrl configuration for the Bandoneo project.
+ * microrl configuration for the Bandolibre project.
  *
  * This file overrides third_party/microrl/src/config.h. It is force-included
  * into microrl.c by CMake (see target's COMPILE_FLAGS), and its include guard

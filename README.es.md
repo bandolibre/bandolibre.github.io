@@ -1,12 +1,12 @@
-![Bandoneo keyboard](documentation/images/3dmodel_keyboard_tilt.webp)
+![Bandolibre keyboard](documentation/images/3dmodel_keyboard_tilt.webp)
 
 🇬🇧 [English](README.md) | 🇫🇷 [Français](README.fr.md) | 🇪🇸 **Español**
 
-# Bandonéo
+# Bandolibre
 
 Un controlador MIDI de código abierto que trae el bandoneón comunmente utilizado en Argentina a la era digital.
 
-**Bandonéo tiene un único objetivo:** convertir las pulsaciones de teclas y el movimiento del fuelle en señal MIDI — con fidelidad, sin latencia y sin el costo ni el ruido de un instrumento acústico. Conéctalo a cualquier computadora, tableta o teléfono por USB y estará listo para tocar, componer o practicar.
+**Bandolibre tiene un único objetivo:** convertir las pulsaciones de teclas y el movimiento del fuelle en señal MIDI — con fidelidad, sin latencia y sin el costo ni el ruido de un instrumento acústico. Conéctalo a cualquier computadora, tableta o teléfono por USB y estará listo para tocar, componer o practicar.
 
 Una iniciativa abierta de [L'Atelier du bandonéon libre](https://github.com/bandolibre)
 
@@ -14,7 +14,7 @@ Una iniciativa abierta de [L'Atelier du bandonéon libre](https://github.com/ban
 
 ## Escúchalo
 
-[![Demo del Bandonéo con un clarinete virtual](https://img.youtube.com/vi/6s1wlRKlAk4/maxresdefault.jpg)](https://youtu.be/6s1wlRKlAk4)
+[![Demo del Bandolibre con un clarinete virtual](https://img.youtube.com/vi/6s1wlRKlAk4/maxresdefault.jpg)](https://youtu.be/6s1wlRKlAk4)
 
 Mira las demos: [con un clarinete virtual](https://youtu.be/6s1wlRKlAk4) · [con instrumentos virtuales de cuerda](https://youtu.be/nJ0j7DtbYDk).
 
@@ -43,7 +43,7 @@ Mira las demos: [con un clarinete virtual](https://youtu.be/6s1wlRKlAk4) · [con
 
 **Modo mesa** — un botón activa el modo mesa: las teclas suenan inmediatamente a velocidad fija, sin necesidad de mover el fuelle. Ideal para ingresar una partitura nota a nota sin accionar el fuelle.
 
-**Toca en cualquier lugar** — Bandonéo se alimenta por el bus USB; cualquier teléfono, tableta o laptop con un sintetizador por software se convierte en el motor de sonido. Un pequeño hub USB con salida de auriculares y paso de alimentación te da audio, carga y MIDI desde un solo cable — testeado y de bolsillo.
+**Toca en cualquier lugar** — Bandolibre se alimenta por el bus USB; cualquier teléfono, tableta o laptop con un sintetizador por software se convierte en el motor de sonido. Un pequeño hub USB con salida de auriculares y paso de alimentación te da audio, carga y MIDI desde un solo cable — testeado y de bolsillo.
 
 **Adaptable** — el estándar USB-MIDI es compatible con todo el ecosistema de adaptadores: conecta un adaptador USB Bluetooth MIDI para tocar de forma inalámbrica, o un adaptador USB a DIN-5 para controlar sintetizadores de hardware vintage.
 
@@ -53,7 +53,7 @@ Mira las demos: [con un clarinete virtual](https://youtu.be/6s1wlRKlAk4) · [con
 
 Este es un proyecto DIY completamente abierto. Los PCB están diseñados para la fabricación "economic PCBA" JLCPCB de dos capas — accesibles y fáciles de pedir. Las piezas mecánicas son imprimibles en 3D (un FabLab cercano funciona de maravilla). El firmware es de código abierto y se puede flashear con una sonda [ST-LINK](https://www.st.com/en/development-tools/stlink-v3minie.html) estándar y un cable [TC-2070-IDC-050](https://www.tag-connect.com/product/tc2070-idc-050).
 
-Construir un bandoneo cuesta aproximadamente lo mismo que un buen teclado MIDI o un buen par de auriculares de estudio como el DT-770 Pro.
+Construir un Bandolibre cuesta aproximadamente lo mismo que un buen teclado MIDI o un buen par de auriculares de estudio como el DT-770 Pro.
 
 ---
 
@@ -114,8 +114,8 @@ Para un desglose detallado del comportamiento del firmware y los controles, ver 
 
 ## ¿Cómo queda?
 
-![Bandoneo overview](documentation/images/bandoneo_overview.webp)
-![Bandoneo main module](documentation/images/bandoneo_main_module.webp)
+![Bandolibre overview](documentation/images/bandoneo_overview.webp)
+![Bandolibre main module](documentation/images/bandoneo_main_module.webp)
 
 Cinco unidades fueron construidas y están funcionando. El firmware maneja las 142 teclas, el fuelle empuje/tracción, los pedales y la salida MIDI de forma confiable. Estos cinco instrumentos están actualmente prestados a profesores de bandoneón que nos dan retroalimentación práctica mientras pulimos el software.
 
@@ -123,7 +123,7 @@ Los modelos 3D y los diseños de PCB son sólidos — no hay revisiones planific
 
 Hay mucho por explorar respecto del software. Dado que los sensores de efecto Hall miden la posición de las teclas de forma continua — no solo encendido/apagado — el firmware tiene acceso al recorrido completo de cada tecla en todo momento. Esto abre la puerta al **MPE (MIDI Polyphonic Expression)**: curvas de presión, deslizamiento y levantamiento por nota, de forma independiente para cada una de las 142 teclas simultáneamente.
 
-Bandonéo funciona brillantemente con [Native Instruments Session Strings](https://www.native-instruments.com/en/products/komplete/orchestral/session-strings-2/). Dicho esto, estamos buscando activamente instrumentos virtuales con soporte expresivo profundo — rica polifonía y CC#11 como controlador principal de articulación. Si conoces alguno, o quieres ayudar a construir algo hecho a medida para el bandoneón, las sugerencias y contribuciones son mas que bienvenidas.
+Bandolibre funciona brillantemente con [Native Instruments Session Strings](https://www.native-instruments.com/en/products/komplete/orchestral/session-strings-2/). Dicho esto, estamos buscando activamente instrumentos virtuales con soporte expresivo profundo — rica polifonía y CC#11 como controlador principal de articulación. Si conoces alguno, o quieres ayudar a construir algo hecho a medida para el bandoneón, las sugerencias y contribuciones son mas que bienvenidas.
 
 ---
 

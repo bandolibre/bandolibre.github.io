@@ -1,11 +1,11 @@
 # Assembly instructions
 
 
-The Bandoneo is meant to be built. It exists so that anyone, anywhere in the
+The Bandolibre is meant to be built. It exists so that anyone, anywhere in the
 world, can make one if they want to — this page walks you through everything it
 takes.
 
-[![Bandoneo 3D model](images/bandoneo_turntable.webp)](https://cad.onshape.com/documents/313e70e978bf056a8dd7d76c/v/5c5fbc4088ac379c1bd1b53a/e/c6a89cb028bdc195ff70596f)
+[![Bandolibre 3D model](images/bandoneo_turntable.webp)](https://cad.onshape.com/documents/313e70e978bf056a8dd7d76c/v/5c5fbc4088ac379c1bd1b53a/e/c6a89cb028bdc195ff70596f)
 
 *Click the model to open the interactive 3D view.*
 

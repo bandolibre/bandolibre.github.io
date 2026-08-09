@@ -7,7 +7,7 @@ The main board enumerates as a full-speed MIDI USB device built on
 |---|---|
 | VID / PID | `0xCafe` / `0x4001` (TinyUSB convention: `0x4000 \| interface bitmap`) |
 | Manufacturer | L'Atelier du bandonéon libre |
-| Product | Bandoneo |
+| Product | Bandolibre |
 | Serial | 96-bit chip UID, 24 hex digits |
 | Interfaces | MIDI only |
 
@@ -45,8 +45,8 @@ from `code/tests`).
 
 ```sh
 lsusb -d cafe:4001       # device present
-amidi -l                 # MIDI port listed as "Bandoneo"
-aseqdump -p Bandoneo &   # then run `midi [note]` in the console to test
+amidi -l                 # MIDI port listed as "Bandolibre"
+aseqdump -p Bandolibre &   # then run `midi [note]` in the console to test
 ```
 
 The `midi [note]` console command (via USART1/ST-Link) sends a note-on/note-off
