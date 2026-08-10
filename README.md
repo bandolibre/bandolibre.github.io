@@ -126,8 +126,10 @@ So we are actively looking for virtual instruments with deep expressive support 
 
 ## Where we are
 
-![Bandolibre overview](documentation/images/bandoneo_overview.webp)
-![Bandolibre main module](documentation/images/bandoneo_main_module.webp)
+<p>
+  <img src="documentation/images/bandoneo_overview.webp" alt="Bandolibre overview" width="49%">
+  <img src="documentation/images/bandoneo_main_module.webp" alt="Bandolibre main module" width="49%">
+</p>
 
 Five units are built and working. The firmware handles all 142 keys, bellows push/pull, pedals, and MIDI output reliably. These instruments are currently on loan to bandoneon teachers who are giving us hands-on feedback while we polish the software.
 

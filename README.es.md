@@ -126,8 +126,10 @@ Por eso estamos buscando activamente instrumentos virtuales con soporte expresiv
 
 ## ¿Cómo queda?
 
-![Bandolibre overview](documentation/images/bandoneo_overview.webp)
-![Bandolibre main module](documentation/images/bandoneo_main_module.webp)
+<p>
+  <img src="documentation/images/bandoneo_overview.webp" alt="Bandolibre overview" width="49%">
+  <img src="documentation/images/bandoneo_main_module.webp" alt="Bandolibre main module" width="49%">
+</p>
 
 Cinco unidades fueron construidas y están funcionando. El firmware maneja las 142 teclas, el fuelle empuje/tracción, los pedales y la salida MIDI de forma confiable. Estos cinco instrumentos están actualmente prestados a profesores de bandoneón que nos dan retroalimentación práctica mientras pulimos el software.
 

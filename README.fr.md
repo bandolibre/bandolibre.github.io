@@ -126,8 +126,10 @@ Nous cherchons donc activement des instruments virtuels avec un support expressi
 
 ## Où en sommes-nous
 
-![Bandolibre overview](documentation/images/bandoneo_overview.webp)
-![Bandolibre main module](documentation/images/bandoneo_main_module.webp)
+<p>
+  <img src="documentation/images/bandoneo_overview.webp" alt="Bandolibre overview" width="49%">
+  <img src="documentation/images/bandoneo_main_module.webp" alt="Bandolibre main module" width="49%">
+</p>
 
 Cinq unités sont construites et fonctionnelles. Le firmware gère les 142 touches, le soufflet poussé/tiré, les pédales et la sortie MIDI de manière fiable. Ces instruments sont actuellement prêtés à des professeurs de bandonéon qui nous donnent leurs retours terrain pendant que nous peaufinons le logiciel.
 
