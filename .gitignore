@@ -1,4 +1,5 @@
 boards/bandoneo_backup
+**/__pycache__
 keyboard_picture/*.xcf
 datasheets
 export
