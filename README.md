@@ -1,4 +1,4 @@
-Website at http://bandolibre.github.io
+Website at https://bandolibre.github.io
 
 Main project (firmware, hardware, docs): https://github.com/bandolibre/bandolibre-main
 
