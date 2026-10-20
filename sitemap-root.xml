@@ -1,0 +1,13 @@
+---
+layout: null
+sitemap: false
+---
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{%- assign entries = site.html_pages | concat: site.documents | where_exp: "doc", "doc.sitemap != false" %}
+{%- for doc in entries %}
+  <url>
+    <loc>https://bandolibre.github.io{{ doc.url | replace: "/index.html", "/" | xml_escape }}</loc>
+  </url>
+{%- endfor %}
+</urlset>
